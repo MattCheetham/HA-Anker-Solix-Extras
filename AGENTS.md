@@ -51,11 +51,13 @@
 
 ## Git and releases
 
-- Make every change on a feature branch and open a pull request against `main`.
-  This includes features, fixes, documentation, and maintenance changes.
+- Make features, fixes, documentation, and maintenance changes on a feature
+  branch and open a pull request against `main`. The release-only exception
+  below applies when a maintainer explicitly requests publication.
 - Wait for explicit maintainer approval before merging into `main`. Passing CI
   is necessary but is not permission to merge. Do not push changes directly to
-  `main`, merge your own PR automatically, or bypass the review workflow.
+  `main` outside the release-only exception, merge your own PR automatically,
+  or bypass the review workflow.
 - Make focused conventional commits as work progresses (`chore:`, `feat:`,
   `test:`, `fix:`, `docs:`). Do not squash or rewrite the owner's commits.
 - Write PR titles as concise, human-readable summaries of the overall change.
@@ -65,6 +67,11 @@
 - Never create/push release tags, publish GitHub releases, or change the version
   unless a maintainer explicitly requests it. Merging a PR does not authorize
   a release. CI checks do not publish releases.
+- An explicit request to publish a version authorizes release-only version bumps
+  and release notes directly on `main`, followed by tagging that tested commit
+  and publishing the release. A release PR or release branch is not required.
+  This exception does not authorize unrelated feature or fix changes. Mark beta
+  releases as GitHub prereleases and leave the latest stable release unchanged.
 - Update this file when implementation or testing reveals useful constraints.
 
 ## Documentation

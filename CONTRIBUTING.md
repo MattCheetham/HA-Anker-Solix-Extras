@@ -16,6 +16,12 @@ Do not create or push release tags, publish GitHub releases, or bump the version
 unless explicitly requested by a maintainer. Releases are a separate step from
 merging a pull request. CI validates changes and does not publish releases.
 
+When a maintainer explicitly requests publication, release-only version bumps
+and release notes can be committed directly to `main`. Tag the tested main
+commit and publish the requested release; no release PR or release branch is
+needed. Features and fixes still require review. Mark betas as GitHub prereleases
+and keep the latest stable release unchanged.
+
 Keep the README focused on installation and use. Put implementation details,
 testing procedures, and contributor advice here or in [AGENTS.md](AGENTS.md).
 Avoid release-status commentary or instructions aimed at a particular person in
