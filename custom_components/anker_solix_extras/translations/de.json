@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Zusätzliche SOLIX-Sensoren hinzufügen",
-        "description": "Wählen Sie einen Akku aus, der bereits in Anker SOLIX Official konfiguriert ist. Extras fügt dem vorhandenen Gerät schreibgeschützte Sensoren hinzu. Einige Messwerte nutzen Funktionen, die Anker nicht offiziell unterstützt; die Heizleistung wird geschätzt.",
+        "description": "Wählen Sie einen Akku aus, der bereits in Anker SOLIX Official konfiguriert ist. Extras fügt dem vorhandenen Gerät schreibgeschützte Sensoren hinzu. Einige Messwerte nutzen Funktionen, die Anker nicht offiziell unterstützt.",
         "data": {
           "official_entry_id": "Akku aus Anker SOLIX Official"
         }

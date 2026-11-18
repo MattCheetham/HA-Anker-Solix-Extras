@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Ajouter des capteurs SOLIX supplémentaires",
-        "description": "Sélectionnez une batterie déjà configurée dans Anker SOLIX Official. Extras ajoute des capteurs en lecture seule à l'appareil existant. Certaines mesures utilisent des fonctionnalités qui ne sont pas officiellement prises en charge par Anker ; la puissance de chauffage est estimée.",
+        "description": "Sélectionnez une batterie déjà configurée dans Anker SOLIX Official. Extras ajoute des capteurs en lecture seule à l'appareil existant. Certaines mesures utilisent des fonctionnalités qui ne sont pas officiellement prises en charge par Anker.",
         "data": {
           "official_entry_id": "Batterie dans Anker SOLIX Official"
         }

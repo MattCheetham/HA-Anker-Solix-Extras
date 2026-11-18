@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Add extra SOLIX sensors",
-        "description": "Select a battery already configured in Anker SOLIX Official. Extras adds read-only sensors to its existing device. Some measurements use features that Anker does not officially support; heating power is estimated.",
+        "description": "Select a battery already configured in Anker SOLIX Official. Extras adds read-only sensors to its existing device. Some measurements use features that Anker does not officially support.",
         "data": {
           "official_entry_id": "Official Anker battery"
         }

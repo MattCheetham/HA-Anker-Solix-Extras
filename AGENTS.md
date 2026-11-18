@@ -71,6 +71,8 @@
   text or adding entities; keep their keys aligned with `strings.json`.
 - Keep the README focused on end users: purpose, sensors, compatibility,
   installation, everyday use, troubleshooting, and removal.
+- Keep the setup wizard description generic; describe individual sensors and
+  their limitations in the README rather than in setup text.
 - Keep general setup and removal instructions applicable to all Extras sensors.
   Put sensor-specific details in the sensor table where possible.
 - Put architecture, register behaviour, test harness details, and hardware-test
