@@ -13,9 +13,9 @@ This is an independent community project, not developed or supported by Anker.
 
 | Sensor | Source | Refresh | Display |
 | --- | --- | --- | --- |
-| Battery temperature | Input register 10156, unit ID 1, signed INT16 divided by 10 | 60 seconds | °C, whole degrees by default |
-| Battery heating power | Estimated from battery and AC power during AC absorption; may include conversion losses or other consumption | 60 seconds | W, whole watts by default |
-| Battery heating active | On when estimated heating power is greater than zero; shares the estimate's limitations | 60 seconds | On / off |
+| Battery temperature | Input register 10156, unit ID 1, signed INT16 divided by 10 | Configured interval | °C, whole degrees by default |
+| Battery heating power | Estimated from battery and AC power during AC absorption; may include conversion losses or other consumption | Configured interval | W, whole watts by default |
+| Battery heating active | On when estimated heating power is greater than zero; shares the estimate's limitations | Configured interval | On / off |
 
 ## Important
 
@@ -87,6 +87,16 @@ After setup, open your battery's existing device page to find the Extras sensors
 You can add them to dashboards and automations like any other Home Assistant
 sensor. Existing dashboards and automations continue to use their original
 entities; Extras does not replace them automatically.
+
+## Polling interval
+
+Extras reads all its sensors every **60 seconds** by default. Choose a custom
+interval during setup, or change it later under **Settings → Devices & services
+→ Anker SOLIX Extras → Configure**. Enter a whole number of seconds, at least 1.
+The setting applies only to Extras for the selected battery.
+
+Saving a changed interval reloads Extras automatically and preserves your entity
+IDs. Shorter intervals increase the number of Modbus requests to the battery.
 
 ## Removing Extras
 

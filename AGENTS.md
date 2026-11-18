@@ -21,6 +21,9 @@
   use max(battery - AC, 0); otherwise zero. Activity is strictly estimate > 0.
 - Do not read or use load power for this estimate. Do not introduce a deadband,
   absolute difference, or undocumented correction without explicit agreement.
+- Polling defaults to 60 seconds per battery, configured through scan_interval
+  in entry.options. Keep setup and options translations aligned. Use
+  OptionsFlowWithReload without an Extras entry update listener.
 - Keep temperature and power availability independent; never retain stale power
   attributes or interpret read failures as zero/off. Preserve temperature IDs.
 - Heating compatibility is inferred for the supported models, not hardware-tested.
