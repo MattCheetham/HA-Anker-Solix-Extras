@@ -7,6 +7,9 @@ import pytest
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
+
+from custom_components.anker_solix_extras.const import DOMAIN, OFFICIAL_DOMAIN
+
 from .ha import (
     CORE_TEST_PLUGIN,
     MockConfigEntry,
@@ -14,8 +17,6 @@ from .ha import (
     mock_integration,
     mock_platform,
 )
-
-from custom_components.anker_solix_extras.const import DOMAIN, OFFICIAL_DOMAIN
 
 
 @pytest.fixture(autouse=True)
