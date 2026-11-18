@@ -1,6 +1,6 @@
 """Tests for Modbus register access and measurement decoding."""
 
-from unittest.mock import call, create_autospec
+from unittest.mock import create_autospec
 
 import pytest
 from modbus_connection import (
@@ -14,6 +14,7 @@ from custom_components.anker_solix_extras.client import (
     AnkerSolixExtrasClient,
     BackupReserveError,
     PowerReadError,
+    RegisterWriteError,
     StateOfHealthReadError,
     TemperatureReadError,
 )
@@ -178,30 +179,21 @@ async def test_invalid_backup_reserve_response(unit, registers) -> None:
         await AnkerSolixExtrasClient(unit).async_read_backup_reserve()
 
 
-async def test_write_backup_reserve_uses_only_single_register_writes(unit) -> None:
-    client = AnkerSolixExtrasClient(unit)
-    await client.async_write_reserve_enabled(True)
-    await client.async_write_reserve_percentage(0)
-    await client.async_write_reserve_percentage(100)
-    await client.async_write_reserve_enabled(False)
-    assert unit.write_register.await_args_list == [
-        call(60003, 1),
-        call(60002, 0),
-        call(60002, 100),
-        call(60003, 0),
-    ]
+async def test_write_register_uses_single_register_write(unit) -> None:
+    await AnkerSolixExtrasClient(unit).async_write_register(200, 65535)
+    unit.write_register.assert_awaited_once_with(200, 65535)
     unit.write_registers.assert_not_awaited()
 
 
-async def test_rejected_backup_reserve_write(unit) -> None:
+async def test_rejected_register_write(unit) -> None:
     unit.write_register.side_effect = IllegalDataAddressError("not supported")
-    with pytest.raises(BackupReserveError):
-        await AnkerSolixExtrasClient(unit).async_write_reserve_enabled(True)
-    unit.write_register.assert_awaited_once_with(60003, 1)
+    with pytest.raises(RegisterWriteError, match="holding register 200"):
+        await AnkerSolixExtrasClient(unit).async_write_register(200, 65535)
+    unit.write_register.assert_awaited_once_with(200, 65535)
 
 
-async def test_disconnected_backup_reserve_write_is_skipped(unit) -> None:
+async def test_disconnected_register_write_is_skipped(unit) -> None:
     unit.connected = False
-    with pytest.raises(BackupReserveError, match="disconnected"):
-        await AnkerSolixExtrasClient(unit).async_write_reserve_enabled(True)
+    with pytest.raises(RegisterWriteError, match="connection closed"):
+        await AnkerSolixExtrasClient(unit).async_write_register(200, 65535)
     unit.write_register.assert_not_awaited()
