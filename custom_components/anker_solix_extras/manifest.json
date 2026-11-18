@@ -2,6 +2,7 @@
   "domain": "anker_solix_extras",
   "name": "Anker SOLIX Extras",
   "after_dependencies": ["anker_solix_official"],
+  "categories": ["energy.solar_batteries"],
   "codeowners": ["@MattCheetham"],
   "config_flow": true,
   "documentation": "https://github.com/MattCheetham/HA-Anker-Solix-Extras",
