@@ -6,7 +6,8 @@
         "title": "Add extra SOLIX sensors",
         "description": "Select a battery already configured in Anker SOLIX Official. Extras adds read-only sensors to its existing device. Some measurements use features that Anker does not officially support.",
         "data": {
-          "official_entry_id": "Official Anker battery"
+          "official_entry_id": "Official Anker battery",
+          "scan_interval": "Polling interval (seconds)"
         }
       }
     },
@@ -31,6 +32,17 @@
     "binary_sensor": {
       "battery_heating_active": {
         "name": "Battery heating active"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Polling settings",
+        "description": "Choose how often Extras reads the battery over Modbus. Enter a whole number of seconds, at least 1. The default is 60 seconds.",
+        "data": {
+          "scan_interval": "Polling interval (seconds)"
+        }
       }
     }
   }

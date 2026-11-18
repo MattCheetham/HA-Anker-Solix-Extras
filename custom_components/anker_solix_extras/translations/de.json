@@ -6,7 +6,8 @@
         "title": "Zusätzliche SOLIX-Sensoren hinzufügen",
         "description": "Wählen Sie einen Akku aus, der bereits in Anker SOLIX Official konfiguriert ist. Extras fügt dem vorhandenen Gerät schreibgeschützte Sensoren hinzu. Einige Messwerte nutzen Funktionen, die Anker nicht offiziell unterstützt.",
         "data": {
-          "official_entry_id": "Akku aus Anker SOLIX Official"
+          "official_entry_id": "Akku aus Anker SOLIX Official",
+          "scan_interval": "Abfrageintervall (Sekunden)"
         }
       }
     },
@@ -31,6 +32,17 @@
     "binary_sensor": {
       "battery_heating_active": {
         "name": "Akkuheizung aktiv"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Abfrageeinstellungen",
+        "description": "Legen Sie fest, wie oft Extras die Batterie über Modbus abfragt. Geben Sie eine ganze Zahl von mindestens 1 Sekunde ein. Der Standardwert beträgt 60 Sekunden.",
+        "data": {
+          "scan_interval": "Abfrageintervall (Sekunden)"
+        }
       }
     }
   }

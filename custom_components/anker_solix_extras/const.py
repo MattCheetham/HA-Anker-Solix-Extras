@@ -1,11 +1,9 @@
 """Constants for Anker SOLIX Extras."""
 
-from datetime import timedelta
-
 DOMAIN = "anker_solix_extras"
 OFFICIAL_DOMAIN = "anker_solix_official"
 CONF_OFFICIAL_ENTRY_ID = "official_entry_id"
-UPDATE_INTERVAL = timedelta(seconds=60)
+DEFAULT_SCAN_INTERVAL = 60
 BATTERY_TEMPERATURE_ADDRESS = 10156
 AC_POWER_ADDRESS = 10006
 MODBUS_DEVICE_ID = 1
