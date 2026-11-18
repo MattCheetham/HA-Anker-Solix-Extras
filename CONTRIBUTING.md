@@ -7,6 +7,11 @@ Create a feature branch and make focused conventional commits, such as `feat:`,
 including documentation and maintenance changes. Wait for explicit maintainer
 approval before merging. Passing CI alone is not approval to merge.
 
+Use a concise, human-readable PR title that summarizes the overall change,
+such as "Simplify the README and clarify contribution rules". Conventional
+commit prefixes such as `docs:` and `feat:` belong in commit messages, not PR
+titles. Update the title and description if the PR's scope changes.
+
 Do not create or push release tags, publish GitHub releases, or bump the version
 unless explicitly requested by a maintainer. Releases are a separate step from
 merging a pull request. CI validates changes and does not publish releases.
