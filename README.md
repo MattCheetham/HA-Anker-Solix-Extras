@@ -97,6 +97,14 @@ You can add them to dashboards and automations like any other Home Assistant
 sensor. Existing dashboards and automations continue to use their original
 entities; Extras does not replace them automatically.
 
+## Viewing the Modbus connection
+
+As a Home Assistant administrator, open **Settings → Connectivity → Modbus**.
+The battery's TCP endpoint lists **Anker SOLIX Extras** as a consumer on
+unit **1**. Existing Extras entries register automatically after updating and
+restarting Home Assistant. Extras uses the address and port from the linked
+Anker SOLIX Official entry. See the [Home Assistant Modbus documentation](https://www.home-assistant.io/connectivity/modbus/#viewing-your-modbus-connections).
+
 ## Polling interval
 
 Extras reads its sensors and backup reserve settings every **60 seconds** by

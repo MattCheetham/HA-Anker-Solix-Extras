@@ -29,9 +29,13 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
     """Poll additional registers at a modest interval."""
 
     def __init__(
-        self, hass: HomeAssistant, entry: ConfigEntry, battery: OfficialBattery
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        battery: OfficialBattery,
+        client: AnkerSolixExtrasClient,
     ) -> None:
-        """Initialize the coordinator and its independently owned connection."""
+        """Initialize the coordinator for the entry's registered Modbus unit."""
         super().__init__(
             hass,
             _LOGGER,
@@ -44,31 +48,28 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
         )
         self.official_entry_id: str = entry.data[CONF_OFFICIAL_ENTRY_ID]
         self.device = battery.device
-        self._address = (battery.host, battery.port)
-        self._client = AnkerSolixExtrasClient(*self._address)
+        self._params = battery.modbus_params
+        self._client = client
         self._io_lock = Lock()
         self._stopping = False
 
-    def _get_client(self) -> AnkerSolixExtrasClient:
-        """Resolve the linked device and its current address before I/O."""
+    def _check_linked_battery(self) -> None:
+        """Ensure the linked battery still matches the registered Modbus unit."""
         if self._stopping:
             raise UpdateFailed("Extras is shutting down")
         battery = async_get_battery(self.hass, self.official_entry_id)
-        if battery is None or battery.device.id != self.device.id:
-            self._client.close()
+        if (
+            battery is None
+            or battery.device.id != self.device.id
+            or battery.modbus_params != self._params
+        ):
             raise UpdateFailed("The linked official battery is unavailable")
 
-        address = (battery.host, battery.port)
-        if address != self._address:
-            self._client.close()
-            self._address = address
-            self._client = AnkerSolixExtrasClient(*address)
-        return self._client
-
     async def _async_update_data(self) -> BatteryMeasurements:
-        """Poll without interleaving a reserve write or closing its connection."""
+        """Poll without interleaving an Extras reserve action."""
         async with self._io_lock:
-            return await self._async_read_measurements(self._get_client())
+            self._check_linked_battery()
+            return await self._async_read_measurements(self._client)
 
     async def _async_read_measurements(
         self, client: AnkerSolixExtrasClient
@@ -120,7 +121,8 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
         """Check current capability and state, then write and confirm one setting."""
         async with self._io_lock:
             try:
-                client = self._get_client()
+                self._check_linked_battery()
+                client = self._client
                 current = await client.async_read_backup_reserve()
                 if current is None or (
                     not current.switch_supported
@@ -136,6 +138,7 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
                     raise ServiceValidationError(
                         translation_domain=DOMAIN, translation_key="reserve_disabled"
                     )
+                self._check_linked_battery()
                 if enabled is not None:
                     await client.async_write_reserve_enabled(enabled)
                 elif percentage is not None:
@@ -168,8 +171,10 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
             self.async_set_updated_data(replace(self.data, backup_reserve=reserve))
 
     async def async_shutdown(self) -> None:
-        """Stop polling and close the Extras connection."""
+        """Drain Extras I/O before Home Assistant releases the unit."""
+        if self._stopping:
+            return
         self._stopping = True
         await super().async_shutdown()
         async with self._io_lock:
-            self._client.close()
+            pass

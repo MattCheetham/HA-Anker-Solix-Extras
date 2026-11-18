@@ -1,12 +1,13 @@
 """Fixtures using Home Assistant's real device and entity registries."""
 
 from collections.abc import Generator
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, create_autospec, patch
 
 import pytest
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
+from modbus_connection import ModbusUnit
 
 from custom_components.anker_solix_extras.const import DOMAIN, OFFICIAL_DOMAIN
 from custom_components.anker_solix_extras.models import BackupReserve, BatteryPower
@@ -67,10 +68,24 @@ async def official_entry(hass: HomeAssistant) -> MockConfigEntry:
 
 
 @pytest.fixture
-def mock_client() -> Generator[MagicMock]:
-    """Replace only the independent Modbus transport boundary."""
+def mock_connection() -> Generator[MagicMock]:
+    """Mock the transport while keeping Home Assistant's connection registry."""
     with patch(
-        "custom_components.anker_solix_extras.coordinator.AnkerSolixExtrasClient",
+        "homeassistant.components.modbus.connection.ModbusConnection",
+        autospec=True,
+    ) as factory:
+        unit = create_autospec(ModbusUnit, instance=True, spec_set=True)
+        unit.connected = True
+        factory.return_value.connected = True
+        factory.return_value.for_unit.return_value = unit
+        yield factory
+
+
+@pytest.fixture
+def mock_client(mock_connection) -> Generator[MagicMock]:
+    """Stub battery measurements for entity and coordinator tests."""
+    with patch(
+        "custom_components.anker_solix_extras.AnkerSolixExtrasClient",
         autospec=True,
     ) as factory:
         client = factory.return_value

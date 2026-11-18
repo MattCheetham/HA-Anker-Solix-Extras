@@ -39,7 +39,8 @@
 
 - Use Python 3.14. `requirements_dev.txt` uses official `pytest-homeassistant`
   matched to Core 2026.11.2. In a separate environment, use
-  `requirements_legacy_test.txt` for Core 2026.10.4 / pymodbus 3.10.0.
+  `requirements_legacy_test.txt` for Core 2026.10.4. Match each Core version's
+  built-in Modbus dependency pins.
 - Never force an incompatible Core version into either test plugin's environment.
   The old community plugin is broken on Core 2026.11. Tests import helpers through
   `tests/ha.py`; only the legacy harness requires `enable_custom_integrations`.
@@ -47,6 +48,9 @@
   HTTP client before Core initializes its new HTTP client compatibility aliases.
 - Follow Home Assistant's async config-flow, coordinator, entity-description,
   typed `ConfigEntry.runtime_data`, and unload-cleanup patterns.
+- Acquire a shared unit from Core's Modbus integration. Use a temporary unit in
+  the config flow and let Core release the entry's unit on unload. Reload only
+  Extras when the official entry's address changes.
 - Use Ruff for lint and formatting; run pytest against real Home Assistant
   helpers. Mock the Modbus transport, not Home Assistant's entity registry.
 - Test config-flow selection and duplicates; signed register decoding; failed

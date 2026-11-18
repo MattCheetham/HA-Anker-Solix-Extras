@@ -3,6 +3,7 @@
 from typing import Any
 
 import voluptuous as vol
+from homeassistant.components.modbus import async_get_temporary_unit
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
@@ -11,10 +12,16 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import selector
 
 from .client import AnkerSolixExtrasClient, TemperatureReadError
-from .const import CONF_OFFICIAL_ENTRY_ID, DEFAULT_SCAN_INTERVAL, DOMAIN
+from .const import (
+    CONF_OFFICIAL_ENTRY_ID,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+    MODBUS_DEVICE_ID,
+)
 from .source import async_get_batteries, async_get_battery
 
 
@@ -55,10 +62,12 @@ class AnkerSolixExtrasConfigFlow(ConfigFlow, domain=DOMAIN):
             if battery is None:
                 errors["base"] = "battery_unavailable"
             else:
-                client = AnkerSolixExtrasClient(battery.host, battery.port)
                 try:
-                    await client.async_read_temperature()
-                except TemperatureReadError:
+                    async with async_get_temporary_unit(
+                        self.hass, battery.modbus_params, MODBUS_DEVICE_ID
+                    ) as unit:
+                        await AnkerSolixExtrasClient(unit).async_read_temperature()
+                except HomeAssistantError, TemperatureReadError:
                     errors["base"] = "cannot_read_temperature"
                 else:
                     return self.async_create_entry(
@@ -70,8 +79,6 @@ class AnkerSolixExtrasConfigFlow(ConfigFlow, domain=DOMAIN):
                             )
                         },
                     )
-                finally:
-                    client.close()
 
         batteries = async_get_batteries(self.hass)
         if not batteries:

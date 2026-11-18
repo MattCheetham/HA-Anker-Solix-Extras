@@ -54,9 +54,9 @@ async def test_invalid_interval_rejected(
 
 
 async def test_options_reload_extras_and_preserve_entities(
-    hass, official_entry, extras_entry, mock_client, freezer
+    hass, official_entry, extras_entry, mock_client, mock_connection, freezer
 ) -> None:
-    """Changing the interval replaces only Extras' transport and timer."""
+    """Changing the interval renews Extras' registration and polling timer."""
     assert await hass.config_entries.async_setup(extras_entry.entry_id)
     await hass.async_block_till_done()
     before = {
@@ -85,7 +85,7 @@ async def test_options_reload_extras_and_preserve_entities(
             er.async_get(hass), extras_entry.entry_id
         )
     } == before
-    mock_client.return_value.close.assert_called()
+    mock_connection.return_value.close.assert_awaited_once()
 
     # Observe the new timer twice, before the old 60-second timer could fire.
     client = mock_client.return_value
