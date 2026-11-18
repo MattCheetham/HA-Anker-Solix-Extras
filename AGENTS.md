@@ -11,9 +11,11 @@
 - Use the official integration's public config-entry data and device registry
   to select a battery. Do not import its implementation, patch its coordinator,
   change operating mode, or modify its files/configuration.
-- Extras may write backup reserve registers 60002 and 60003 only through their
-  controls. Check the corresponding capability and fresh reserve state before
-  writing, and confirm writes with readback. Polling and setup are read-only.
+- Keep Modbus writes generic at the client layer and issue them only through
+  explicit controls. Each control checks capability and fresh state before
+  writing, then confirms the result by reading it back. Polling and setup are
+  read-only.
+- Only the backup reserve controls may write registers 60002 and 60003.
 - Additional entities belong to Extras but attach to the official device using
   `entity.device_entry` with `device_info` unset. Matching identifiers alone
   does not share a device across config entries in recent Home Assistant.

@@ -1,4 +1,4 @@
-"""Modbus access for additional SOLIX measurements and reserve controls."""
+"""Modbus register access for Anker SOLIX Extras."""
 
 from modbus_connection import ModbusError, ModbusUnit
 
@@ -28,11 +28,15 @@ class StateOfHealthReadError(Exception):
 
 
 class BackupReserveError(Exception):
-    """A backup reserve read or write could not be confirmed."""
+    """The backup reserve settings could not be read."""
+
+
+class RegisterWriteError(Exception):
+    """A Modbus register write could not be completed."""
 
 
 class AnkerSolixExtrasClient:
-    """Read Extras registers and write reserve settings through a shared unit."""
+    """Read and write Modbus registers through a shared unit."""
 
     def __init__(self, unit: ModbusUnit) -> None:
         """Use the Modbus unit managed by Home Assistant."""
@@ -111,24 +115,16 @@ class AnkerSolixExtrasClient:
             raise BackupReserveError("Invalid reserve percentage")
         return BackupReserve(bool(enabled), switch_supported, percentage)
 
-    async def async_write_reserve_enabled(self, enabled: bool) -> None:
-        """Write the backup reserve enable flag."""
-        await self._async_write_reserve_register(RESERVE_ENABLE_ADDRESS, int(enabled))
-
-    async def async_write_reserve_percentage(self, percentage: int) -> None:
-        """Write a whole reserve percentage."""
-        if type(percentage) is not int or not 0 <= percentage <= 100:
-            raise ValueError("Reserve percentage must be a whole number from 0 to 100")
-        await self._async_write_reserve_register(RESERVE_PERCENTAGE_ADDRESS, percentage)
-
-    async def _async_write_reserve_register(self, address: int, value: int) -> None:
-        """Send FC06 on the connection used to check the current reserve settings."""
+    async def async_write_register(self, address: int, value: int) -> None:
+        """Write one holding register (FC06) on the active connection."""
         if not self._unit.connected:
-            raise BackupReserveError("Battery disconnected before the reserve write")
+            raise RegisterWriteError("Modbus connection closed before the write")
         try:
             await self._unit.write_register(address, value)
         except (ModbusError, OSError) as err:
-            raise BackupReserveError("Unable to write backup reserve") from err
+            raise RegisterWriteError(
+                f"Unable to write holding register {address}"
+            ) from err
 
 
 def _valid_words(registers: list[int], count: int) -> bool:

@@ -15,10 +15,17 @@ from .client import (
     AnkerSolixExtrasClient,
     BackupReserveError,
     PowerReadError,
+    RegisterWriteError,
     StateOfHealthReadError,
     TemperatureReadError,
 )
-from .const import CONF_OFFICIAL_ENTRY_ID, DEFAULT_SCAN_INTERVAL, DOMAIN
+from .const import (
+    CONF_OFFICIAL_ENTRY_ID,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+    RESERVE_ENABLE_ADDRESS,
+    RESERVE_PERCENTAGE_ADDRESS,
+)
 from .models import BackupReserve, BatteryMeasurements
 from .source import OfficialBattery, async_get_battery
 
@@ -66,7 +73,7 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
             raise UpdateFailed("The linked official battery is unavailable")
 
     async def _async_update_data(self) -> BatteryMeasurements:
-        """Poll without interleaving an Extras reserve action."""
+        """Poll without interleaving a control operation."""
         async with self._io_lock:
             self._check_linked_battery()
             return await self._async_read_measurements(self._client)
@@ -113,6 +120,8 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
 
     async def async_set_reserve_percentage(self, percentage: int) -> None:
         """Set the backup reserve percentage while reserve is enabled."""
+        if type(percentage) is not int or not 0 <= percentage <= 100:
+            raise ValueError("Reserve percentage must be a whole number from 0 to 100")
         await self._async_set_backup_reserve(percentage=percentage)
 
     async def _async_set_backup_reserve(
@@ -140,16 +149,20 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
                     )
                 self._check_linked_battery()
                 if enabled is not None:
-                    await client.async_write_reserve_enabled(enabled)
+                    await client.async_write_register(
+                        RESERVE_ENABLE_ADDRESS, int(enabled)
+                    )
                 elif percentage is not None:
-                    await client.async_write_reserve_percentage(percentage)
+                    await client.async_write_register(
+                        RESERVE_PERCENTAGE_ADDRESS, percentage
+                    )
                 updated = await client.async_read_backup_reserve()
             except UpdateFailed as err:
                 self._publish_backup_reserve(None)
                 raise HomeAssistantError(
                     translation_domain=DOMAIN, translation_key="reserve_unavailable"
                 ) from err
-            except BackupReserveError as err:
+            except (BackupReserveError, RegisterWriteError) as err:
                 self._publish_backup_reserve(None)
                 raise HomeAssistantError(
                     translation_domain=DOMAIN, translation_key="reserve_write_failed"

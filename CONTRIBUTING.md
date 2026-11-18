@@ -63,8 +63,12 @@ Do not import the official integration's Python modules or access its private
 coordinator data. Extras registers a unit with Home Assistant's shared Modbus
 integration using the official entry's TCP address. Home Assistant owns that
 connection and releases Extras' registration on unload. A change to the
-official entry's address reloads Extras to register the new endpoint. Only
-explicit backup reserve actions write to the battery.
+official entry's address reloads Extras to register the new endpoint.
+
+Only explicit control actions write to Modbus. The shared client writes by
+register address and value. Each control owns its validation, checks the
+device's current capability and state, and confirms the result by reading it
+back. Setup, polling, reloads, and removal are read-only.
 
 Verify setup, reload, unload, and removal with the real Home Assistant registries.
 Removing Extras must leave the official device and entities intact. If the
@@ -166,9 +170,9 @@ a time with unit ID 1. The percentage is writable only when a fresh read shows
 that reserve is enabled. Extras checks the capability and reads the setting back
 for each write. A rejected write or a mismatch is surfaced as a service error.
 
-Reserve read failures affect the controls independently of the sensors. Setup,
-polls, reloads, and removal never write reserve settings. Direct hardware writes
-and restoration were verified on a Solarbank 4 E5000 Pro with firmware 1.0.3.37.
+Reserve read failures affect the controls independently of the sensors.
+Direct hardware writes and restoration were verified on a Solarbank 4 E5000 Pro
+with firmware 1.0.3.37.
 
 ## Polling configuration
 

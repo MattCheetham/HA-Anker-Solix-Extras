@@ -1,13 +1,17 @@
 """Exercise the backup reserve controls through Home Assistant services."""
 
 from dataclasses import replace
+from unittest.mock import call
 
 import pytest
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 
-from custom_components.anker_solix_extras.client import BackupReserveError
+from custom_components.anker_solix_extras.client import (
+    BackupReserveError,
+    RegisterWriteError,
+)
 
 
 @pytest.fixture
@@ -42,22 +46,21 @@ async def test_reserve_actions_confirm_state_and_share_the_official_device(
     ) == (0, 100, 1)
 
     client = mock_client.return_value
-    reserve = client.async_read_backup_reserve.return_value
 
-    async def write_enabled(enabled):
-        client.async_read_backup_reserve.return_value = replace(
-            client.async_read_backup_reserve.return_value, enabled=enabled
-        )
+    async def write_register(address, value):
+        reserve = client.async_read_backup_reserve.return_value
+        if address == 60003:
+            client.async_read_backup_reserve.return_value = replace(
+                reserve, enabled=bool(value)
+            )
+        else:
+            assert address == 60002
+            client.async_read_backup_reserve.return_value = replace(
+                reserve, percentage=value
+            )
 
-    async def write_percentage(percentage):
-        client.async_read_backup_reserve.return_value = replace(
-            reserve, enabled=True, percentage=percentage
-        )
-
-    client.async_write_reserve_enabled.side_effect = write_enabled
-    client.async_write_reserve_percentage.side_effect = write_percentage
-    client.async_write_reserve_enabled.assert_not_awaited()
-    client.async_write_reserve_percentage.assert_not_awaited()
+    client.async_write_register.side_effect = write_register
+    client.async_write_register.assert_not_awaited()
 
     await hass.services.async_call(
         "switch", "turn_on", {"entity_id": switch.entity_id}, blocking=True
@@ -69,13 +72,17 @@ async def test_reserve_actions_confirm_state_and_share_the_official_device(
         {"entity_id": number.entity_id, "value": 19},
         blocking=True,
     )
-    client.async_write_reserve_percentage.assert_awaited_once_with(19)
     assert float(hass.states.get(number.entity_id).state) == 19
     await hass.services.async_call(
         "switch", "turn_off", {"entity_id": switch.entity_id}, blocking=True
     )
     assert hass.states.get(switch.entity_id).state == STATE_OFF
     assert float(hass.states.get(number.entity_id).state) == 19
+    assert client.async_write_register.await_args_list == [
+        call(60003, 1),
+        call(60002, 19),
+        call(60003, 0),
+    ]
 
 
 async def test_percentage_write_checks_fresh_enable_state(
@@ -98,7 +105,7 @@ async def test_percentage_write_checks_fresh_enable_state(
         )
     assert error.value.translation_key == "reserve_disabled"
     assert hass.states.get(reserve_entities["switch"].entity_id).state == STATE_OFF
-    client.async_write_reserve_percentage.assert_not_awaited()
+    client.async_write_register.assert_not_awaited()
 
 
 async def test_fractional_percentage_never_reaches_modbus(
@@ -112,7 +119,7 @@ async def test_fractional_percentage_never_reaches_modbus(
             blocking=True,
         )
     assert error.value.translation_key == "reserve_invalid_percentage"
-    mock_client.return_value.async_write_reserve_percentage.assert_not_awaited()
+    mock_client.return_value.async_write_register.assert_not_awaited()
 
 
 async def test_switch_checks_fresh_capability(
@@ -127,7 +134,7 @@ async def test_switch_checks_fresh_capability(
         )
     assert error.value.translation_key == "reserve_unavailable"
     assert hass.states.get(switch).state == STATE_UNAVAILABLE
-    client.async_write_reserve_enabled.assert_not_awaited()
+    client.async_write_register.assert_not_awaited()
 
 
 async def test_readback_mismatch_does_not_publish_requested_value(
@@ -139,8 +146,22 @@ async def test_readback_mismatch_does_not_publish_requested_value(
             "switch", "turn_on", {"entity_id": switch}, blocking=True
         )
     assert error.value.translation_key == "reserve_write_failed"
-    mock_client.return_value.async_write_reserve_enabled.assert_awaited_once_with(True)
+    mock_client.return_value.async_write_register.assert_awaited_once_with(60003, 1)
     assert hass.states.get(switch).state == STATE_OFF
+
+
+async def test_register_write_failure_reports_control_error(
+    hass, mock_client, reserve_entities
+) -> None:
+    client = mock_client.return_value
+    client.async_write_register.side_effect = RegisterWriteError("write failed")
+    switch = reserve_entities["switch"].entity_id
+    with pytest.raises(HomeAssistantError) as error:
+        await hass.services.async_call(
+            "switch", "turn_on", {"entity_id": switch}, blocking=True
+        )
+    assert error.value.translation_key == "reserve_write_failed"
+    assert hass.states.get(switch).state == STATE_UNAVAILABLE
 
 
 async def test_failed_reserve_reads_leave_measurements_available(
