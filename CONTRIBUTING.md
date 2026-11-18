@@ -65,7 +65,7 @@ device or invent sensor values.
 ## Hardware validation
 
 The separate Extras integration has been reported working on a Solarbank 4 E5000
-Pro, including its additional sensor appearing on the existing official device.
+Pro, including its temperature sensor appearing on the existing official device.
 Keep hardware observations separate from inferred compatibility for other models.
 
 For a new measurement or model, compare readings with a known working source and
@@ -82,3 +82,59 @@ Run `python scripts/build_zip.py` to create `dist/anker_solix_extras.zip`. The
 archive contains the `anker_solix_extras` folder ready to extract into Home
 Assistant's `custom_components` directory. Building it does not create a tag or
 publish a release.
+
+## Heating estimate
+
+The heating entities are experimental estimates, not direct heater telemetry.
+Extras reads input registers 10006–10009 together (unit ID 1): AC power at 10006
+and battery power at 10008. Each is a high-word-first signed INT32 in watts,
+matching the official integration's decoding. Negative values mean AC absorption
+and battery charging respectively. No load power registers are read or used.
+
+When AC power is negative, estimated heating is `max(battery_power - ac_power, 0)`.
+Otherwise it is zero. For example, AC power of -2450 W and battery power of
+-2210 W produce 240 W. Activity is strictly `heating_power > 0`, with no
+threshold, rounding, or hysteresis. Both entities therefore share any false
+positives in the estimate, including small conversion losses. Heating outside
+AC absorption is not detected. Other consumption and PV flows may affect the
+power difference; the estimate does not compensate for them.
+
+The power entity exposes signed `ac_power` and `battery_power` source attributes.
+Both must come from the same response. A failed power read makes both heating
+entities unavailable and clears those attributes. Temperature is independent:
+partial read failures must not hide a valid measurement or reuse stale values.
+If neither measurement succeeds, the coordinator reports an update failure.
+Existing setup validation still checks the temperature register; adding heating
+must not require existing installations to recreate their configuration entry.
+
+The register definitions come from the
+[Anker Modbus guide](https://salesforce-knowledge-download.s3.us-west-2.amazonaws.com/000039871/en_US/000039871.pdf).
+[Upstream PR #155](https://github.com/anker-charging/ha-anker-solix-official/pull/155)
+provides the initial calculation idea, but its worked example reverses the two
+signed source readings relative to its formula. Tests use the signs above rather
+than taking an absolute difference. Model compatibility remains inferred, not a
+claim of successful hardware testing.
+
+### Manual heating comparison
+
+Coordinate hardware testing with the maintainer; do not install this branch,
+restart Home Assistant, or change battery settings automatically.
+
+1. Install the reviewed build using the normal installation method, preserving
+   the official integration and existing Extras entry. Confirm all three Extras
+   entities appear on the existing battery device and temperature retains its ID.
+2. During naturally occurring heating-off and heating-on periods with AC
+   absorption, compare the Anker app's heater reading with Extras. Allow for the
+   60-second polling interval and the app's own refresh delay.
+3. Record the two signed source attributes, calculated heating, activity state,
+   app heater reading, PV generation, and any connected appliance consumption.
+   Also observe a period without AC absorption: the estimate must be zero and
+   activity off, regardless of whether the device can heat in that condition.
+4. Report the model, firmware, conditions, and any consistent mismatch. In
+   particular, check whether conversion losses produce positive estimates while
+   the app reports no heating. Do not use the estimate for critical automations
+   before comparing it with the device's behavior.
+5. Check reload and restart preserve all entity IDs. Roll back the integration
+   files if needed without deleting the official device or configuration.
+
+Redact addresses, identifiers, and account information before sharing observations.

@@ -4,7 +4,7 @@
 
 - This is a community companion to `anker_solix_official`, not a replacement.
 - Keep the domain `anker_solix_extras` and only provide additional entities.
-- Start with read-only battery temperature: input register 10156, unit ID 1,
+- Read-only battery temperature uses input register 10156, unit ID 1,
   signed INT16 divided by 10, Celsius, suggested display precision 0.
 - Register 10156 is undocumented by Anker. Distinguish hardware observations
   from inferred model compatibility; never describe it as officially supported.
@@ -16,6 +16,15 @@
   does not share a device across config entries in recent Home Assistant.
 - Removing/reloading Extras must never remove or update the official device.
   Handle the official entry being unavailable, disabled, removed, or reconfigured.
+- Heating is an experimental estimate: read signed INT32 AC/battery power from
+  input registers 10006–10009 together, high word first. When AC is negative,
+  use max(battery - AC, 0); otherwise zero. Activity is strictly estimate > 0.
+- Do not read or use load power for this estimate. Do not introduce a deadband,
+  absolute difference, or undocumented correction without explicit agreement.
+- Keep temperature and power availability independent; never retain stale power
+  attributes or interpret read failures as zero/off. Preserve temperature IDs.
+- Heating compatibility is inferred for the supported models, not hardware-tested.
+  Keep the README clear that losses and other consumption may affect the estimate.
 
 ## Development
 

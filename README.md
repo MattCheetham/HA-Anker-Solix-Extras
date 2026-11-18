@@ -14,6 +14,8 @@ This is an independent community project, not developed or supported by Anker.
 | Sensor | Source | Refresh | Display |
 | --- | --- | --- | --- |
 | Battery temperature | Input register 10156, unit ID 1, signed INT16 divided by 10 | 60 seconds | °C, whole degrees by default |
+| Battery heating power | Estimated from battery and AC power during AC absorption; may include conversion losses or other consumption | 60 seconds | W, whole watts by default |
+| Battery heating active | On when estimated heating power is greater than zero; shares the estimate's limitations | 60 seconds | On / off |
 
 ## Important
 
@@ -32,12 +34,15 @@ no responsibility for damage to your device or other loss resulting from its use
 
 These are the models offered during setup:
 
-| Model | Validation |
+| Model | Temperature validation |
 | --- | --- |
 | Solarbank 4 E5000 Pro | Tested successfully with Extras |
 | Solarbank Max AC | Independently reported in [upstream issue #58](https://github.com/anker-charging/ha-anker-solix-official/issues/58) |
 | Solarbank Max | Inferred from the official integration's shared register map |
 | XE / XE AC | Inferred from the official integration's shared register map |
+
+Heating compatibility is inferred from the shared power register definitions for
+these models and has not yet been hardware-validated.
 
 Smart plugs and meters are not supported.
 
