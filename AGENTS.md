@@ -66,6 +66,9 @@
 
 ## Documentation
 
+- Match the official integration's languages: English, German, French, and Dutch
+  (`en`, `de`, `fr`, `nl`). Update all four translation files when changing setup
+  text or adding entities; keep their keys aligned with `strings.json`.
 - Keep the README focused on end users: purpose, sensors, compatibility,
   installation, everyday use, troubleshooting, and removal.
 - Keep general setup and removal instructions applicable to all Extras sensors.

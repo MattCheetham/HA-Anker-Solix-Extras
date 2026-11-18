@@ -1,0 +1,37 @@
+{
+  "title": "Anker SOLIX Extras",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Ajouter des capteurs SOLIX supplémentaires",
+        "description": "Sélectionnez une batterie déjà configurée dans Anker SOLIX Official. Extras ajoute des capteurs en lecture seule à l'appareil existant. Certaines mesures utilisent des fonctionnalités qui ne sont pas officiellement prises en charge par Anker ; la puissance de chauffage est estimée.",
+        "data": {
+          "official_entry_id": "Batterie dans Anker SOLIX Official"
+        }
+      }
+    },
+    "error": {
+      "battery_unavailable": "La batterie sélectionnée n'est plus disponible dans l'intégration officielle. Vérifiez qu'elle est activée et chargée dans Home Assistant, puis réessayez.",
+      "cannot_read_temperature": "Impossible de lire la température de la batterie. Vérifiez la connexion à la batterie et que son micrologiciel fournit le registre d'entrée 10156."
+    },
+    "abort": {
+      "already_configured": "Extras est déjà configuré pour cette batterie.",
+      "no_official_batteries": "Aucune batterie compatible n'est prête dans Anker SOLIX Official. Installez et configurez d'abord l'intégration officielle, puis vérifiez que la batterie est activée et disponible."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_temperature": {
+        "name": "Température de la batterie"
+      },
+      "battery_heating_power": {
+        "name": "Puissance de chauffage de la batterie"
+      }
+    },
+    "binary_sensor": {
+      "battery_heating_active": {
+        "name": "Chauffage de la batterie actif"
+      }
+    }
+  }
+}
