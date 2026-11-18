@@ -11,6 +11,7 @@ from custom_components.anker_solix_extras.binary_sensor import (
 )
 from custom_components.anker_solix_extras.client import (
     PowerReadError,
+    StateOfHealthReadError,
     TemperatureReadError,
 )
 from custom_components.anker_solix_extras.const import DOMAIN, SUPPORTED_MODELS
@@ -47,10 +48,10 @@ def test_heating_estimate(ac, battery, expected) -> None:
 
 
 @pytest.mark.parametrize("model", sorted(SUPPORTED_MODELS))
-async def test_heating_entities_share_official_device(
+async def test_extras_entities_share_official_device(
     hass, official_entry, extras_entry, mock_client, model
 ) -> None:
-    """All supported profiles gain both entities without a second device."""
+    """All supported profiles gain Extras entities without a second device."""
     device = next(iter(dr.async_get(hass).devices))
     dr.async_get(hass).async_update_device(device.id, model=model)
     devices_before = {item.id for item in dr.async_get(hass).devices}
@@ -61,6 +62,7 @@ async def test_heating_entities_share_official_device(
         "battery_temperature",
         "battery_heating_power",
         "battery_heating_active",
+        "battery_state_of_health",
     }
     for key, entity in entities.items():
         assert entity.device_id == device.id
@@ -88,6 +90,42 @@ async def test_heating_entities_share_official_device(
     assert "device_class" not in active.attributes
     assert active.attributes["icon"] == "mdi:radiator"
     assert "unit_of_measurement" not in active.attributes
+
+    soh = entities["battery_state_of_health"]
+    state = hass.states.get(soh.entity_id)
+    assert state.state == "100"
+    assert state.name.endswith("Battery State of Health")
+    assert state.attributes["unit_of_measurement"] == "%"
+    assert state.attributes["state_class"] == "measurement"
+    assert soh.options["sensor"]["suggested_display_precision"] == 0
+
+
+async def test_state_of_health_updates_and_independent_failures(
+    hass, extras_entry, mock_client
+) -> None:
+    """Hide stale SOH on failure and publish zero on recovery."""
+    assert await hass.config_entries.async_setup(extras_entry.entry_id)
+    await hass.async_block_till_done()
+    entities = get_entities(hass, extras_entry)
+    soh = entities["battery_state_of_health"].entity_id
+    temperature = entities["battery_temperature"].entity_id
+    power = entities["battery_heating_power"].entity_id
+    client = mock_client.return_value
+
+    client.async_read_state_of_health.side_effect = StateOfHealthReadError("rejected")
+    await extras_entry.runtime_data.async_refresh()
+    assert hass.states.get(soh).state == STATE_UNAVAILABLE
+    assert hass.states.get(temperature).state == "25.0"
+    assert hass.states.get(power).state == "240"
+
+    client.async_read_state_of_health.side_effect = None
+    client.async_read_state_of_health.return_value = 0
+    client.async_read_temperature.side_effect = TemperatureReadError("offline")
+    client.async_read_power.side_effect = PowerReadError("offline")
+    await extras_entry.runtime_data.async_refresh()
+    assert hass.states.get(soh).state == "0"
+    assert hass.states.get(temperature).state == STATE_UNAVAILABLE
+    assert hass.states.get(power).state == STATE_UNAVAILABLE
 
 
 async def test_heating_updates_and_independent_failures(
@@ -132,9 +170,11 @@ async def test_heating_updates_and_independent_failures(
     client.async_read_temperature.side_effect = TemperatureReadError("rejected")
     await check(STATE_UNAVAILABLE, "1", "on")
     client.async_read_power.side_effect = PowerReadError("offline")
+    client.async_read_state_of_health.side_effect = StateOfHealthReadError("offline")
     await check(STATE_UNAVAILABLE, STATE_UNAVAILABLE, STATE_UNAVAILABLE)
     client.async_read_temperature.side_effect = None
     client.async_read_power.side_effect = None
+    client.async_read_state_of_health.side_effect = None
     client.async_read_power.return_value = BatteryPower(100, 200)
     await check("25.0", "0", "off")
 
@@ -152,7 +192,7 @@ async def test_setup_with_one_measurement_unavailable(
     assert await hass.config_entries.async_setup(extras_entry.entry_id)
     await hass.async_block_till_done()
     entities = get_entities(hass, extras_entry)
-    assert len(entities) == 3
+    assert len(entities) == 4
     assert extras_entry.state is ConfigEntryState.LOADED
     assert hass.states.get(entities["battery_temperature"].entity_id).state == (
         STATE_UNAVAILABLE if failed == "temperature" else "25.0"
@@ -199,9 +239,11 @@ async def test_power_not_read_when_official_entry_unloaded(
     client = mock_client.return_value
     client.async_read_power.reset_mock()
     client.async_read_temperature.reset_mock()
+    client.async_read_state_of_health.reset_mock()
     await extras_entry.runtime_data.async_refresh()
     client.async_read_power.assert_not_awaited()
     client.async_read_temperature.assert_not_awaited()
+    client.async_read_state_of_health.assert_not_awaited()
     for entry in entities.values():
         assert hass.states.get(entry.entity_id).state == STATE_UNAVAILABLE
     assert await hass.config_entries.async_setup(official_entry.entry_id)
@@ -228,7 +270,7 @@ async def test_upgrade_preserves_existing_temperature_entity(
     entities = get_entities(hass, extras_entry)
     assert entities["battery_temperature"].entity_id == original.entity_id
     assert entities["battery_temperature"].name == "My temperature"
-    assert len(entities) == 3
+    assert len(entities) == 4
 
 
 async def test_sources_update_when_estimate_is_unchanged(

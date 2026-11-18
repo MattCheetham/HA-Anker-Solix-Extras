@@ -107,11 +107,7 @@ power difference; the estimate does not compensate for them.
 
 The power entity exposes signed `ac_power` and `battery_power` source attributes.
 Both must come from the same response. A failed power read makes both heating
-entities unavailable and clears those attributes. Temperature is independent:
-partial read failures must not hide a valid measurement or reuse stale values.
-If neither measurement succeeds, the coordinator reports an update failure.
-Existing setup validation still checks the temperature register; adding heating
-must not require existing installations to recreate their configuration entry.
+entities unavailable and clears those attributes.
 
 The register definitions come from the
 [Anker Modbus guide](https://salesforce-knowledge-download.s3.us-west-2.amazonaws.com/000039871/en_US/000039871.pdf).
@@ -127,7 +123,7 @@ Coordinate hardware testing with the maintainer; do not install this branch,
 restart Home Assistant, or change battery settings automatically.
 
 1. Install the reviewed build using the normal installation method, preserving
-   the official integration and existing Extras entry. Confirm all three Extras
+   the official integration and existing Extras entry. Confirm the Extras
    entities appear on the existing battery device and temperature retains its ID.
 2. During naturally occurring heating-off and heating-on periods with AC
    absorption, compare the Anker app's heater reading with Extras. Allow for the
@@ -144,6 +140,18 @@ restart Home Assistant, or change battery settings automatically.
    files if needed without deleting the official device or configuration.
 
 Redact addresses, identifiers, and account information before sharing observations.
+
+## Battery state of health
+
+The [Anker Modbus guide](https://salesforce-knowledge-download.s3.us-west-2.amazonaws.com/000039871/en_US/000039871.pdf#page=8)
+defines input register 10015 as the combined SOH of all batteries in the system.
+Extras reads one unsigned 16-bit word at unit ID 1 and displays values from 0
+through 100 as whole percentages.
+
+Temperature, power and SOH are polled independently. A rejected or invalid SOH
+read makes SOH unavailable until a valid reading arrives. The coordinator reports
+an update failure when all three reads fail. Setup validation still checks the
+temperature register, and existing configurations acquire SOH on reload.
 
 ## Polling configuration
 

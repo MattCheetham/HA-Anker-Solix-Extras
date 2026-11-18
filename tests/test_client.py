@@ -9,6 +9,7 @@ from pymodbus.exceptions import ModbusException
 from custom_components.anker_solix_extras.client import (
     AnkerSolixExtrasClient,
     PowerReadError,
+    StateOfHealthReadError,
     TemperatureReadError,
 )
 
@@ -90,6 +91,58 @@ async def test_reconnects_when_disconnected(transport) -> None:
     client = AnkerSolixExtrasClient("192.0.2.10", 502)
     assert await client.async_read_temperature() == 25
     transport.connect.assert_awaited_once()
+
+
+@pytest.mark.parametrize("value", [0, 87, 100])
+async def test_read_state_of_health(transport, value) -> None:
+    """Use the read-only register and return the whole percentage as reported."""
+    transport.read_input_registers.return_value = SimpleNamespace(
+        registers=[value], isError=lambda: False
+    )
+    client = AnkerSolixExtrasClient("192.0.2.10", 502)
+    assert await client.async_read_state_of_health() == value
+    transport.read_input_registers.assert_awaited_once_with(
+        address=10015, count=1, device_id=1
+    )
+    transport.close.assert_not_called()
+
+
+@pytest.mark.parametrize("registers", [[], [87, 87], [True], [-1], [101], [0xFFFF]])
+async def test_invalid_state_of_health(transport, registers) -> None:
+    """Reject malformed replies and values outside the percentage range."""
+    transport.read_input_registers.return_value = SimpleNamespace(
+        registers=registers, isError=lambda: False
+    )
+    client = AnkerSolixExtrasClient("192.0.2.10", 502)
+    with pytest.raises(StateOfHealthReadError, match="Invalid"):
+        await client.async_read_state_of_health()
+    transport.close.assert_called_once()
+
+
+async def test_rejected_state_of_health(transport) -> None:
+    """Handle devices that reject the SOH register read."""
+    transport.read_input_registers.return_value = SimpleNamespace(isError=lambda: True)
+    with pytest.raises(StateOfHealthReadError, match="rejected"):
+        await AnkerSolixExtrasClient("192.0.2.10", 502).async_read_state_of_health()
+    transport.close.assert_called_once()
+
+
+async def test_state_of_health_transport_failure(transport) -> None:
+    """Surface a timeout as a failed measurement and release the connection."""
+    transport.read_input_registers.side_effect = TimeoutError()
+    with pytest.raises(StateOfHealthReadError):
+        await AnkerSolixExtrasClient("192.0.2.10", 502).async_read_state_of_health()
+    transport.close.assert_called_once()
+
+
+async def test_state_of_health_connection_failure(transport) -> None:
+    """Skip the register read if the transport could not reconnect."""
+    transport.connected = False
+    transport.connect.return_value = False
+    with pytest.raises(StateOfHealthReadError, match="connect"):
+        await AnkerSolixExtrasClient("192.0.2.10", 502).async_read_state_of_health()
+    transport.read_input_registers.assert_not_awaited()
+    transport.close.assert_called_once()
 
 
 def test_close_releases_own_transport(transport) -> None:

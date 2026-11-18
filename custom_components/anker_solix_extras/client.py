@@ -5,6 +5,7 @@ from pymodbus.exceptions import ModbusException
 
 from .const import (
     AC_POWER_ADDRESS,
+    BATTERY_SOH_ADDRESS,
     BATTERY_TEMPERATURE_ADDRESS,
     MODBUS_DEVICE_ID,
     MODBUS_TIMEOUT,
@@ -18,6 +19,10 @@ class TemperatureReadError(Exception):
 
 class PowerReadError(Exception):
     """A pair of power readings could not be obtained."""
+
+
+class StateOfHealthReadError(Exception):
+    """A battery state of health reading could not be obtained."""
 
 
 class AnkerSolixExtrasClient:
@@ -97,5 +102,40 @@ class AnkerSolixExtrasClient:
             self.close()
             raise PowerReadError("Unable to read battery power") from err
         except PowerReadError:
+            self.close()
+            raise
+
+    async def async_read_state_of_health(self) -> int:
+        """Read the battery system's state of health as a whole percentage."""
+        try:
+            if not self._client.connected and not await self._client.connect():
+                raise StateOfHealthReadError("Unable to connect to the battery")
+            response = await self._client.read_input_registers(
+                address=BATTERY_SOH_ADDRESS,
+                count=1,
+                device_id=MODBUS_DEVICE_ID,
+            )
+            if response.isError():
+                raise StateOfHealthReadError("The battery rejected the SOH read")
+            registers = response.registers
+            if (
+                len(registers) != 1
+                or type(registers[0]) is not int
+                or not 0 <= registers[0] <= 100
+            ):
+                raise StateOfHealthReadError("Invalid SOH response")
+            return registers[0]
+        except (
+            ModbusException,
+            OSError,
+            TimeoutError,
+            AttributeError,
+            TypeError,
+        ) as err:
+            self.close()
+            raise StateOfHealthReadError(
+                "Unable to read battery state of health"
+            ) from err
+        except StateOfHealthReadError:
             self.close()
             raise

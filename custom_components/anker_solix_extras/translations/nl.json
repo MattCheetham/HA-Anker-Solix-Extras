@@ -25,6 +25,9 @@
       "battery_temperature": {
         "name": "Batterijtemperatuur"
       },
+      "battery_state_of_health": {
+        "name": "Batterijgezondheid"
+      },
       "battery_heating_power": {
         "name": "Batterijverwarmingsvermogen"
       }
