@@ -46,6 +46,10 @@
   `main`, merge your own PR automatically, or bypass the review workflow.
 - Make focused conventional commits as work progresses (`chore:`, `feat:`,
   `test:`, `fix:`, `docs:`). Do not squash or rewrite the owner's commits.
+- Write PR titles as concise, human-readable summaries of the overall change.
+  Do not copy a conventional commit subject or include prefixes such as `docs:`
+  or `feat:`. For example: "Simplify the README and clarify contribution rules".
+  Keep the title and description aligned with the final scope of the PR.
 - Never create/push release tags, publish GitHub releases, or change the version
   unless a maintainer explicitly requests it. Merging a PR does not authorize
   a release. CI checks do not publish releases.
