@@ -3,8 +3,8 @@
   "config": {
     "step": {
       "user": {
-        "title": "Add extra SOLIX sensors",
-        "description": "Select a battery already configured in Anker SOLIX Official. Extras adds read-only sensors to its existing device. Some measurements use features that Anker does not officially support.",
+        "title": "Add SOLIX Extras",
+        "description": "Select a battery already configured in Anker SOLIX Official. Extras adds sensors and controls to its existing device.",
         "data": {
           "official_entry_id": "Official Anker battery",
           "scan_interval": "Polling interval (seconds)"
@@ -32,10 +32,34 @@
         "name": "Battery Heating Power"
       }
     },
+    "switch": {
+      "backup_reserve": {
+        "name": "Backup Reserve"
+      }
+    },
+    "number": {
+      "backup_reserve_soc": {
+        "name": "Backup Reserve Percentage"
+      }
+    },
     "binary_sensor": {
       "battery_heating_active": {
         "name": "Battery Heating Active"
       }
+    }
+  },
+  "exceptions": {
+    "reserve_unavailable": {
+      "message": "Backup reserve is unavailable for this battery."
+    },
+    "reserve_disabled": {
+      "message": "Turn on Backup Reserve before setting the percentage."
+    },
+    "reserve_write_failed": {
+      "message": "Could not confirm the backup reserve change. Check the battery connection and current setting."
+    },
+    "reserve_invalid_percentage": {
+      "message": "Enter a whole percentage from 0 to 100."
     }
   },
   "options": {

@@ -3,8 +3,8 @@
   "config": {
     "step": {
       "user": {
-        "title": "Extra SOLIX-sensoren toevoegen",
-        "description": "Selecteer een batterij die al in Anker SOLIX Official is geconfigureerd. Extras voegt alleen-lezen sensoren toe aan het bestaande apparaat. Sommige metingen gebruiken functies die Anker niet officieel ondersteunt.",
+        "title": "SOLIX Extras toevoegen",
+        "description": "Selecteer een batterij die al in Anker SOLIX Official is geconfigureerd. Extras voegt sensoren en bedieningselementen toe aan het bestaande apparaat.",
         "data": {
           "official_entry_id": "Batterij uit Anker SOLIX Official",
           "scan_interval": "Pollinginterval (seconden)"
@@ -32,10 +32,34 @@
         "name": "Batterijverwarmingsvermogen"
       }
     },
+    "switch": {
+      "backup_reserve": {
+        "name": "Noodstroomreserve"
+      }
+    },
+    "number": {
+      "backup_reserve_soc": {
+        "name": "Percentage noodstroomreserve"
+      }
+    },
     "binary_sensor": {
       "battery_heating_active": {
         "name": "Batterijverwarming actief"
       }
+    }
+  },
+  "exceptions": {
+    "reserve_unavailable": {
+      "message": "De noodstroomreserve is niet beschikbaar voor deze batterij."
+    },
+    "reserve_disabled": {
+      "message": "Schakel de noodstroomreserve in voordat je het percentage instelt."
+    },
+    "reserve_write_failed": {
+      "message": "De wijziging van de noodstroomreserve kon niet worden bevestigd. Controleer de verbinding met de batterij en de huidige instelling."
+    },
+    "reserve_invalid_percentage": {
+      "message": "Voer een geheel percentage van 0 tot 100 in."
     }
   },
   "options": {

@@ -1,9 +1,9 @@
 # Anker SOLIX Extras Integration for Home Assistant
 
-Additional sensors for batteries configured in the
+Additional sensors and controls for batteries configured in the
 [official Anker SOLIX integration](https://github.com/anker-charging/ha-anker-solix-official).
 
-Extras runs alongside the official integration and adds sensors to your
+Extras runs alongside the official integration and adds entities to your
 existing battery's device page. Your existing sensors, controls, and settings
 continue to work as before.
 
@@ -17,6 +17,14 @@ This is an independent community project, not developed or supported by Anker.
 | Battery State of Health | Combined state of health reported by the battery system | % |
 | Battery Heating Power | Estimated from battery and AC power during AC absorption; may include conversion losses or other consumption | W, whole watts by default |
 | Battery Heating Active | On when estimated heating power is greater than zero; shares the estimate's limitations | On / off |
+
+## Backup reserve controls
+
+On your battery's device page, turn on **Backup Reserve**, then set **Backup
+Reserve Percentage** to a whole percentage. The stored percentage remains
+visible when reserve is off. Each control requires its corresponding battery
+capability. The reserve registers were write-tested on a Solarbank 4 E5000 Pro
+with firmware 1.0.3.37.
 
 ## Important
 
@@ -58,7 +66,7 @@ Smart plugs and meters are not supported.
 5. Restart Home Assistant to load the new custom integration.
 6. Go to **Settings → Devices & services → Add integration**, search for
    **Anker SOLIX Extras**, and select your existing official battery.
-7. Open your battery's existing device page. The additional sensors appear
+7. Open your battery's existing device page. The additional entities appear
    alongside those provided by the official integration.
 
 Extras is installed through a custom repository. Keep the official integration
@@ -91,8 +99,9 @@ entities; Extras does not replace them automatically.
 
 ## Polling interval
 
-Extras reads all its sensors every **60 seconds** by default. Choose a custom
-interval during setup, or change it later under **Settings → Devices & services
+Extras reads its sensors and backup reserve settings every **60 seconds** by
+default. Choose a custom interval during setup, or change it later under
+**Settings → Devices & services
 → Anker SOLIX Extras → Configure**. Enter a whole number of seconds, at least 1.
 The setting applies only to Extras for the selected battery.
 
@@ -101,10 +110,10 @@ IDs. Shorter intervals increase the number of Modbus requests to the battery.
 
 ## Removing Extras
 
-1. Update any dashboards or automations that use Extras sensors before removing
-   them, choosing replacement sensors where needed.
+1. Update any dashboards or automations that use Extras entities before removing
+   the integration.
 2. In **Settings → Devices & services**, remove **Anker SOLIX Extras**.
-   This removes its sensors while leaving the official integration and device
+   This removes its entities while leaving the official integration and device
    in place.
 3. Uninstall Extras through **Marketplace / HACS**, then restart Home Assistant.
    For a manual installation, delete only `custom_components/anker_solix_extras`

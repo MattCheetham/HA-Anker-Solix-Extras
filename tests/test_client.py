@@ -1,17 +1,19 @@
-"""Tests for read-only Modbus access and signed measurement decoding."""
+"""Tests for Modbus register access and measurement decoding."""
 
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, call, patch
 
 import pytest
 from pymodbus.exceptions import ModbusException
 
 from custom_components.anker_solix_extras.client import (
     AnkerSolixExtrasClient,
+    BackupReserveError,
     PowerReadError,
     StateOfHealthReadError,
     TemperatureReadError,
 )
+from custom_components.anker_solix_extras.models import BackupReserve
 
 
 @pytest.fixture
@@ -25,6 +27,9 @@ def transport():
         client.connected = True
         client.connect = AsyncMock(return_value=True)
         client.read_input_registers = AsyncMock()
+        client.read_holding_registers = AsyncMock()
+        client.write_register = AsyncMock()
+        client.write_registers = AsyncMock()
         yield client
 
 
@@ -243,3 +248,72 @@ async def test_power_reconnects_after_temperature_failure(transport) -> None:
     transport.connected = False
     assert (await client.async_read_power()).heating_power == 0
     transport.connect.assert_awaited_once()
+
+
+@pytest.mark.parametrize(
+    ("mask", "registers", "address", "expected"),
+    [
+        (15, [7, 1], 60002, BackupReserve(True, True, 7)),
+        (8, [0], 60003, BackupReserve(False, True, None)),
+        (4, [0, 1], 60002, BackupReserve(True, False, 0)),
+        (3, [], None, None),
+    ],
+)
+async def test_read_backup_reserve(
+    transport, mask, registers, address, expected
+) -> None:
+    transport.read_input_registers.return_value = SimpleNamespace(
+        registers=[mask], isError=lambda: False
+    )
+    transport.read_holding_registers.return_value = SimpleNamespace(
+        registers=registers, isError=lambda: False
+    )
+    client = AnkerSolixExtrasClient("192.0.2.10", 502)
+    assert await client.async_read_backup_reserve() == expected
+    transport.read_input_registers.assert_awaited_once_with(
+        address=32775, count=1, device_id=1
+    )
+    if address is None:
+        transport.read_holding_registers.assert_not_awaited()
+    else:
+        transport.read_holding_registers.assert_awaited_once_with(
+            address=address, count=len(registers), device_id=1
+        )
+    transport.write_register.assert_not_awaited()
+
+
+@pytest.mark.parametrize("registers", [[], [50], [101, 1], [50, 2], [0, True]])
+async def test_invalid_backup_reserve_response(transport, registers) -> None:
+    transport.read_input_registers.return_value = SimpleNamespace(
+        registers=[15], isError=lambda: False
+    )
+    transport.read_holding_registers.return_value = SimpleNamespace(
+        registers=registers, isError=lambda: False
+    )
+    with pytest.raises(BackupReserveError, match="Invalid reserve"):
+        await AnkerSolixExtrasClient("192.0.2.10", 502).async_read_backup_reserve()
+
+
+async def test_write_backup_reserve_uses_only_single_register_writes(transport) -> None:
+    transport.write_register.return_value = SimpleNamespace(isError=lambda: False)
+    client = AnkerSolixExtrasClient("192.0.2.10", 502)
+    await client.async_write_reserve_enabled(True)
+    await client.async_write_reserve_percentage(0)
+    await client.async_write_reserve_percentage(100)
+    await client.async_write_reserve_enabled(False)
+    assert transport.write_register.await_args_list == [
+        call(address=60003, value=1, device_id=1),
+        call(address=60002, value=0, device_id=1),
+        call(address=60002, value=100, device_id=1),
+        call(address=60003, value=0, device_id=1),
+    ]
+    transport.write_registers.assert_not_awaited()
+
+
+async def test_rejected_backup_reserve_write(transport) -> None:
+    transport.write_register.return_value = SimpleNamespace(isError=lambda: True)
+    with pytest.raises(BackupReserveError, match="rejected"):
+        await AnkerSolixExtrasClient("192.0.2.10", 502).async_write_reserve_enabled(
+            True
+        )
+    transport.close.assert_called_once()

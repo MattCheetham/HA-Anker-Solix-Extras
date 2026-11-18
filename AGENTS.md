@@ -10,7 +10,10 @@
   from inferred model compatibility; never describe it as officially supported.
 - Use the official integration's public config-entry data and device registry
   to select a battery. Do not import its implementation, patch its coordinator,
-  write registers, change operating mode, or modify its files/configuration.
+  change operating mode, or modify its files/configuration.
+- Extras may write backup reserve registers 60002 and 60003 only through their
+  controls. Check the corresponding capability and fresh reserve state before
+  writing, and confirm writes with readback. Polling and setup are read-only.
 - Additional entities belong to Extras but attach to the official device using
   `entity.device_entry` with `device_info` unset. Matching identifiers alone
   does not share a device across config entries in recent Home Assistant.
@@ -89,7 +92,7 @@
   installation, everyday use, troubleshooting, and removal.
 - Keep the setup wizard description generic; describe individual sensors and
   their limitations in the README rather than in setup text.
-- Keep general setup and removal instructions applicable to all Extras sensors.
+- Keep general setup and removal instructions applicable to all Extras entities.
   Put sensor-specific details in the sensor table where possible.
 - Put architecture, register behaviour, test harness details, and hardware-test
   procedures in `CONTRIBUTING.md` or this file instead of the main README.
