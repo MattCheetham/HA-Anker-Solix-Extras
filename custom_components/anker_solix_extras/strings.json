@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Add extra SOLIX sensors",
-        "description": "Select a battery already configured in Anker SOLIX Official. Extras adds a read-only battery temperature sensor to its existing device. This uses an undocumented register that Anker does not officially support.",
+        "description": "Select a battery already configured in Anker SOLIX Official. Extras adds read-only sensors to its existing device. Some measurements use features that Anker does not officially support; heating power is estimated.",
         "data": {
           "official_entry_id": "Official Anker battery"
         }
@@ -23,6 +23,14 @@
     "sensor": {
       "battery_temperature": {
         "name": "Battery temperature"
+      },
+      "battery_heating_power": {
+        "name": "Battery heating power"
+      }
+    },
+    "binary_sensor": {
+      "battery_heating_active": {
+        "name": "Battery heating active"
       }
     }
   }
