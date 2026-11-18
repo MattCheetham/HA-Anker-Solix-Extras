@@ -172,3 +172,30 @@ async def test_unload_failure_keeps_connection_open(
     ):
         assert not await hass.config_entries.async_unload(extras_entry.entry_id)
     mock_client.return_value.close.assert_not_called()
+
+
+async def test_official_unload_stops_reads_and_recovers_after_setup(
+    hass, official_entry, extras_entry, mock_client
+) -> None:
+    assert await hass.config_entries.async_setup(extras_entry.entry_id)
+    await hass.async_block_till_done()
+    entity = get_temperature(hass, extras_entry)
+    assert await hass.config_entries.async_unload(official_entry.entry_id)
+    mock_client.return_value.async_read_temperature.reset_mock()
+
+    await extras_entry.runtime_data.async_refresh()
+    mock_client.return_value.async_read_temperature.assert_not_awaited()
+    assert hass.states.get(entity.entity_id).state == STATE_UNAVAILABLE
+
+    assert await hass.config_entries.async_setup(official_entry.entry_id)
+    await extras_entry.runtime_data.async_refresh()
+    assert hass.states.get(entity.entity_id).state == "25.0"
+
+
+async def test_missing_official_entry_defers_setup_without_connecting(
+    hass, extras_entry, official_entry, mock_client
+) -> None:
+    assert await hass.config_entries.async_remove(official_entry.entry_id)
+    assert not await hass.config_entries.async_setup(extras_entry.entry_id)
+    assert extras_entry.state is ConfigEntryState.SETUP_RETRY
+    mock_client.assert_not_called()

@@ -58,3 +58,12 @@ async def test_disabled_entry_is_not_offered(hass, official_entry) -> None:
 
 async def test_unknown_entry(hass) -> None:
     assert async_get_battery(hass, "missing-entry") is None
+
+
+async def test_disabled_device_is_not_offered(hass, official_entry) -> None:
+    registry = dr.async_get(hass)
+    device = registry.async_get_device_by_identifier(
+        (OFFICIAL_DOMAIN, official_entry.entry_id), official_entry.entry_id
+    )
+    registry.async_update_device(device.id, disabled_by=dr.DeviceEntryDisabler.USER)
+    assert async_get_batteries(hass) == []
