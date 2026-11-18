@@ -6,7 +6,8 @@
         "title": "Ajouter des capteurs SOLIX supplémentaires",
         "description": "Sélectionnez une batterie déjà configurée dans Anker SOLIX Official. Extras ajoute des capteurs en lecture seule à l'appareil existant. Certaines mesures utilisent des fonctionnalités qui ne sont pas officiellement prises en charge par Anker.",
         "data": {
-          "official_entry_id": "Batterie dans Anker SOLIX Official"
+          "official_entry_id": "Batterie dans Anker SOLIX Official",
+          "scan_interval": "Intervalle d'interrogation (secondes)"
         }
       }
     },
@@ -31,6 +32,17 @@
     "binary_sensor": {
       "battery_heating_active": {
         "name": "Chauffage de la batterie actif"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Paramètres d'interrogation",
+        "description": "Choisissez la fréquence de lecture de la batterie par Extras via Modbus. Saisissez un nombre entier de secondes, au moins égal à 1. La valeur par défaut est de 60 secondes.",
+        "data": {
+          "scan_interval": "Intervalle d'interrogation (secondes)"
+        }
       }
     }
   }

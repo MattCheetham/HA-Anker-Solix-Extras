@@ -3,18 +3,44 @@
 from typing import Any
 
 import voluptuous as vol
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlowWithReload,
+)
+from homeassistant.const import CONF_SCAN_INTERVAL
+from homeassistant.core import callback
 from homeassistant.helpers import selector
 
 from .client import AnkerSolixExtrasClient, TemperatureReadError
-from .const import CONF_OFFICIAL_ENTRY_ID, DOMAIN
+from .const import CONF_OFFICIAL_ENTRY_ID, DEFAULT_SCAN_INTERVAL, DOMAIN
 from .source import async_get_batteries, async_get_battery
+
+
+def _polling_schema(default: int = DEFAULT_SCAN_INTERVAL) -> vol.Schema:
+    """Configure a positive polling interval in whole seconds."""
+    return vol.Schema(
+        {
+            vol.Required(CONF_SCAN_INTERVAL, default=default): vol.All(
+                int, vol.Range(min=1)
+            )
+        }
+    )
 
 
 class AnkerSolixExtrasConfigFlow(ConfigFlow, domain=DOMAIN):
     """Create one Extras entry per official battery."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: ConfigEntry,
+    ) -> AnkerSolixExtrasOptionsFlow:
+        """Allow polling changes without recreating the integration entry."""
+        return AnkerSolixExtrasOptionsFlow()
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -38,6 +64,11 @@ class AnkerSolixExtrasConfigFlow(ConfigFlow, domain=DOMAIN):
                     return self.async_create_entry(
                         title=battery.entry.title,
                         data={CONF_OFFICIAL_ENTRY_ID: official_entry_id},
+                        options={
+                            CONF_SCAN_INTERVAL: user_input.get(
+                                CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
+                            )
+                        },
                     )
                 finally:
                     client.close()
@@ -48,7 +79,7 @@ class AnkerSolixExtrasConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema(
+            data_schema=_polling_schema().extend(
                 {
                     vol.Required(CONF_OFFICIAL_ENTRY_ID): selector.SelectSelector(
                         selector.SelectSelectorConfig(
@@ -65,4 +96,24 @@ class AnkerSolixExtrasConfigFlow(ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
+        )
+
+
+class AnkerSolixExtrasOptionsFlow(OptionsFlowWithReload):
+    """Change Extras polling and reload only this integration."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Edit the interval, prefilling the saved value or the default."""
+        if user_input is not None:
+            return self.async_create_entry(
+                data={**self.config_entry.options, **user_input}
+            )
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=_polling_schema(
+                self.config_entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+            ),
         )

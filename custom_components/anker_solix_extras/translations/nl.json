@@ -6,7 +6,8 @@
         "title": "Extra SOLIX-sensoren toevoegen",
         "description": "Selecteer een batterij die al in Anker SOLIX Official is geconfigureerd. Extras voegt alleen-lezen sensoren toe aan het bestaande apparaat. Sommige metingen gebruiken functies die Anker niet officieel ondersteunt.",
         "data": {
-          "official_entry_id": "Batterij uit Anker SOLIX Official"
+          "official_entry_id": "Batterij uit Anker SOLIX Official",
+          "scan_interval": "Pollinginterval (seconden)"
         }
       }
     },
@@ -31,6 +32,17 @@
     "binary_sensor": {
       "battery_heating_active": {
         "name": "Batterijverwarming actief"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Pollinginstellingen",
+        "description": "Kies hoe vaak Extras de batterij via Modbus uitleest. Voer een geheel aantal seconden in, minimaal 1. De standaardwaarde is 60 seconden.",
+        "data": {
+          "scan_interval": "Pollinginterval (seconden)"
+        }
       }
     }
   }
