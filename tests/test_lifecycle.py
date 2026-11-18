@@ -7,7 +7,10 @@ from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
-from custom_components.anker_solix_extras.client import TemperatureReadError
+from custom_components.anker_solix_extras.client import (
+    PowerReadError,
+    TemperatureReadError,
+)
 from custom_components.anker_solix_extras.const import DOMAIN, OFFICIAL_DOMAIN
 
 
@@ -16,8 +19,12 @@ def get_temperature(hass, extras_entry):
     entities = er.async_entries_for_config_entry(
         er.async_get(hass), extras_entry.entry_id
     )
-    assert len(entities) == 1
-    return entities[0]
+    assert len(entities) == 3
+    return next(
+        entity
+        for entity in entities
+        if entity.unique_id.endswith("_battery_temperature")
+    )
 
 
 async def test_sensor_attaches_to_official_device(
@@ -122,6 +129,7 @@ async def test_read_failure_marks_sensor_unavailable_and_recovers(
 async def test_setup_failure_closes_extras_connection(
     hass, extras_entry, mock_client
 ) -> None:
+    mock_client.return_value.async_read_power.side_effect = PowerReadError("offline")
     mock_client.return_value.async_read_temperature.side_effect = TemperatureReadError(
         "offline"
     )
