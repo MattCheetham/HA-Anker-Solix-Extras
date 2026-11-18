@@ -1,4 +1,4 @@
-# Anker SOLIX Extras
+# Anker SOLIX Extras Integration for Home Assistant
 
 Additional sensors for batteries configured in the
 [official Anker SOLIX integration](https://github.com/anker-charging/ha-anker-solix-official).
