@@ -82,6 +82,9 @@
 - Match the official integration's languages: English, German, French, and Dutch
   (`en`, `de`, `fr`, `nl`). Update all four translation files when changing setup
   text or adding entities; keep their keys aligned with `strings.json`.
+- Match the official integration's English entity names with Title Case (for
+  example, Battery Heating Power). Keep native capitalization conventions in
+  other languages and preserve translation keys and entity IDs when renaming.
 - Keep the README focused on end users: purpose, sensors, compatibility,
   installation, everyday use, troubleshooting, and removal.
 - Keep the setup wizard description generic; describe individual sensors and
