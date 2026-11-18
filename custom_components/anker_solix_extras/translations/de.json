@@ -1,0 +1,37 @@
+{
+  "title": "Anker SOLIX Extras",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Zusätzliche SOLIX-Sensoren hinzufügen",
+        "description": "Wählen Sie einen Akku aus, der bereits in Anker SOLIX Official konfiguriert ist. Extras fügt dem vorhandenen Gerät schreibgeschützte Sensoren hinzu. Einige Messwerte nutzen Funktionen, die Anker nicht offiziell unterstützt; die Heizleistung wird geschätzt.",
+        "data": {
+          "official_entry_id": "Akku aus Anker SOLIX Official"
+        }
+      }
+    },
+    "error": {
+      "battery_unavailable": "Der ausgewählte Akku ist in der offiziellen Integration nicht mehr verfügbar. Prüfen Sie, ob er aktiviert und geladen ist, und versuchen Sie es erneut.",
+      "cannot_read_temperature": "Die Akkutemperatur konnte nicht gelesen werden. Prüfen Sie die Verbindung zum Akku und ob seine Firmware das Eingangsregister 10156 bereitstellt."
+    },
+    "abort": {
+      "already_configured": "Extras ist für diesen Akku bereits konfiguriert.",
+      "no_official_batteries": "In Anker SOLIX Official sind keine unterstützten Akkus bereit. Installieren und konfigurieren Sie zuerst die offizielle Integration und stellen Sie sicher, dass das Akkugerät aktiviert und verfügbar ist."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_temperature": {
+        "name": "Akkutemperatur"
+      },
+      "battery_heating_power": {
+        "name": "Akkuheizleistung"
+      }
+    },
+    "binary_sensor": {
+      "battery_heating_active": {
+        "name": "Akkuheizung aktiv"
+      }
+    }
+  }
+}

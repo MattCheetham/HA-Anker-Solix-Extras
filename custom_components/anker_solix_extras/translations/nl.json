@@ -1,0 +1,37 @@
+{
+  "title": "Anker SOLIX Extras",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Extra SOLIX-sensoren toevoegen",
+        "description": "Selecteer een batterij die al in Anker SOLIX Official is geconfigureerd. Extras voegt alleen-lezen sensoren toe aan het bestaande apparaat. Sommige metingen gebruiken functies die Anker niet officieel ondersteunt; het verwarmingsvermogen wordt geschat.",
+        "data": {
+          "official_entry_id": "Batterij uit Anker SOLIX Official"
+        }
+      }
+    },
+    "error": {
+      "battery_unavailable": "De geselecteerde batterij is niet meer beschikbaar in de officiële integratie. Controleer of deze is ingeschakeld en geladen en probeer het opnieuw.",
+      "cannot_read_temperature": "De batterijtemperatuur kon niet worden gelezen. Controleer de verbinding met de batterij en of de firmware ingangsregister 10156 beschikbaar stelt."
+    },
+    "abort": {
+      "already_configured": "Extras is al geconfigureerd voor deze batterij.",
+      "no_official_batteries": "Er zijn geen ondersteunde batterijen gereed in Anker SOLIX Official. Installeer en configureer eerst de officiële integratie en controleer of het batterijapparaat is ingeschakeld en beschikbaar is."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_temperature": {
+        "name": "Batterijtemperatuur"
+      },
+      "battery_heating_power": {
+        "name": "Batterijverwarmingsvermogen"
+      }
+    },
+    "binary_sensor": {
+      "battery_heating_active": {
+        "name": "Batterijverwarming actief"
+      }
+    }
+  }
+}
