@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Extra SOLIX-sensoren toevoegen",
-        "description": "Selecteer een batterij die al in Anker SOLIX Official is geconfigureerd. Extras voegt alleen-lezen sensoren toe aan het bestaande apparaat. Sommige metingen gebruiken functies die Anker niet officieel ondersteunt; het verwarmingsvermogen wordt geschat.",
+        "description": "Selecteer een batterij die al in Anker SOLIX Official is geconfigureerd. Extras voegt alleen-lezen sensoren toe aan het bestaande apparaat. Sommige metingen gebruiken functies die Anker niet officieel ondersteunt.",
         "data": {
           "official_entry_id": "Batterij uit Anker SOLIX Official"
         }
