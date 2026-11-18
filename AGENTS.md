@@ -28,6 +28,9 @@
   attributes or interpret read failures as zero/off. Preserve temperature IDs.
 - Heating compatibility is inferred for the supported models, not hardware-tested.
   Keep the README clear that losses and other consumption may affect the estimate.
+- Heating activity uses a generic binary sensor with a radiator icon so its
+  states display as On/Off. The Heat device class means Hot/Normal, not whether
+  the battery heater is active.
 
 ## Development
 
