@@ -6,7 +6,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import UnitOfPower, UnitOfTemperature
+from homeassistant.const import PERCENTAGE, UnitOfPower, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -32,6 +32,15 @@ BATTERY_HEATING_POWER = SensorEntityDescription(
     suggested_display_precision=0,
 )
 
+BATTERY_STATE_OF_HEALTH = SensorEntityDescription(
+    key="battery_state_of_health",
+    translation_key="battery_state_of_health",
+    icon="mdi:battery-heart",
+    state_class=SensorStateClass.MEASUREMENT,
+    native_unit_of_measurement=PERCENTAGE,
+    suggested_display_precision=0,
+)
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -43,6 +52,7 @@ async def async_setup_entry(
         [
             AnkerSolixBatteryTemperature(entry.runtime_data),
             AnkerSolixBatteryHeatingPower(entry.runtime_data),
+            AnkerSolixBatteryStateOfHealth(entry.runtime_data),
         ]
     )
 
@@ -106,3 +116,30 @@ class AnkerSolixBatteryHeatingPower(
             power = self.coordinator.data.power
             return {"ac_power": power.ac_power, "battery_power": power.battery_power}
         return None
+
+
+class AnkerSolixBatteryStateOfHealth(
+    CoordinatorEntity[AnkerSolixExtrasCoordinator], SensorEntity
+):
+    """Report the combined state of health of the battery system."""
+
+    _attr_has_entity_name = True
+    entity_description = BATTERY_STATE_OF_HEALTH
+
+    def __init__(self, coordinator: AnkerSolixExtrasCoordinator) -> None:
+        """Attach to the existing official device."""
+        super().__init__(coordinator)
+        self._attr_unique_id = (
+            f"{coordinator.official_entry_id}_battery_state_of_health"
+        )
+        self.device_entry = coordinator.device
+
+    @property
+    def available(self) -> bool:
+        """Require a fresh state of health reading."""
+        return super().available and self.coordinator.data.state_of_health is not None
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the percentage reported by the battery system."""
+        return self.coordinator.data.state_of_health if self.available else None

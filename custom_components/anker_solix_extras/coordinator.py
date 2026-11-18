@@ -8,7 +8,12 @@ from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .client import AnkerSolixExtrasClient, PowerReadError, TemperatureReadError
+from .client import (
+    AnkerSolixExtrasClient,
+    PowerReadError,
+    StateOfHealthReadError,
+    TemperatureReadError,
+)
 from .const import CONF_OFFICIAL_ENTRY_ID, DEFAULT_SCAN_INTERVAL, DOMAIN
 from .models import BatteryMeasurements
 from .source import OfficialBattery, async_get_battery
@@ -53,6 +58,7 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
 
         temperature = None
         power = None
+        state_of_health = None
         try:
             temperature = await self._client.async_read_temperature()
         except TemperatureReadError as err:
@@ -61,9 +67,15 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
             power = await self._client.async_read_power()
         except PowerReadError as err:
             _LOGGER.debug("Power read failed: %s", err)
-        if temperature is None and power is None:
-            raise UpdateFailed("Unable to read battery temperature or power")
-        return BatteryMeasurements(temperature=temperature, power=power)
+        try:
+            state_of_health = await self._client.async_read_state_of_health()
+        except StateOfHealthReadError as err:
+            _LOGGER.debug("State of health read failed: %s", err)
+        if temperature is None and power is None and state_of_health is None:
+            raise UpdateFailed("Unable to read any battery measurements")
+        return BatteryMeasurements(
+            temperature=temperature, power=power, state_of_health=state_of_health
+        )
 
     async def async_shutdown(self) -> None:
         """Stop polling and close the Extras connection."""

@@ -9,6 +9,7 @@ from homeassistant.helpers import entity_registry as er
 
 from custom_components.anker_solix_extras.client import (
     PowerReadError,
+    StateOfHealthReadError,
     TemperatureReadError,
 )
 from custom_components.anker_solix_extras.const import DOMAIN, OFFICIAL_DOMAIN
@@ -19,7 +20,7 @@ def get_temperature(hass, extras_entry):
     entities = er.async_entries_for_config_entry(
         er.async_get(hass), extras_entry.entry_id
     )
-    assert len(entities) == 3
+    assert len(entities) == 4
     return next(
         entity
         for entity in entities
@@ -131,6 +132,9 @@ async def test_setup_failure_closes_extras_connection(
     hass, extras_entry, mock_client
 ) -> None:
     mock_client.return_value.async_read_power.side_effect = PowerReadError("offline")
+    mock_client.return_value.async_read_state_of_health.side_effect = (
+        StateOfHealthReadError("offline")
+    )
     mock_client.return_value.async_read_temperature.side_effect = TemperatureReadError(
         "offline"
     )
