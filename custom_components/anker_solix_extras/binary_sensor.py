@@ -1,7 +1,6 @@
 """Heating activity attached to an existing official Anker device."""
 
 from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
@@ -15,7 +14,7 @@ from .coordinator import AnkerSolixExtrasCoordinator
 BATTERY_HEATING_ACTIVE = BinarySensorEntityDescription(
     key="battery_heating_active",
     translation_key="battery_heating_active",
-    device_class=BinarySensorDeviceClass.HEAT,
+    icon="mdi:radiator",
 )
 
 

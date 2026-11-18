@@ -85,7 +85,8 @@ async def test_heating_entities_share_official_device(
     active = hass.states.get(entities["battery_heating_active"].entity_id)
     assert active.state == "on"
     assert active.name.endswith("Battery heating active")
-    assert active.attributes["device_class"] == "heat"
+    assert "device_class" not in active.attributes
+    assert active.attributes["icon"] == "mdi:radiator"
     assert "unit_of_measurement" not in active.attributes
 
 
@@ -243,3 +244,33 @@ async def test_sources_update_when_estimate_is_unchanged(
     assert state.state == "240"
     assert state.attributes["ac_power"] == -1240
     assert state.attributes["battery_power"] == -1000
+
+
+async def test_upgrade_clears_heat_class_without_replacing_entity(
+    hass, extras_entry, mock_client
+) -> None:
+    """Existing beta installs gain On/Off labels while retaining entity identity."""
+    registry = er.async_get(hass)
+    original = registry.async_get_or_create(
+        "binary_sensor",
+        DOMAIN,
+        f"{extras_entry.data['official_entry_id']}_battery_heating_active",
+        config_entry=extras_entry,
+        suggested_object_id="my_heating_active",
+        original_device_class="heat",
+    )
+    assert await hass.config_entries.async_setup(extras_entry.entry_id)
+    await hass.async_block_till_done()
+    entity = get_entities(hass, extras_entry)["battery_heating_active"]
+    assert entity.entity_id == original.entity_id
+    assert entity.original_device_class is None
+    state = hass.states.get(entity.entity_id)
+    assert state.state == "on"
+    assert "device_class" not in state.attributes
+    assert state.attributes["icon"] == "mdi:radiator"
+
+    mock_client.return_value.async_read_power.return_value = BatteryPower(-1000, -1000)
+    await extras_entry.runtime_data.async_refresh()
+    state = hass.states.get(entity.entity_id)
+    assert state.state == "off"
+    assert "device_class" not in state.attributes
