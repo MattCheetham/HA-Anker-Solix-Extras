@@ -7,7 +7,8 @@ import pytest
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
-from pytest_homeassistant_custom_component.common import (
+from .ha import (
+    CORE_TEST_PLUGIN,
     MockConfigEntry,
     MockModule,
     mock_integration,
@@ -18,8 +19,10 @@ from custom_components.anker_solix_extras.const import DOMAIN, OFFICIAL_DOMAIN
 
 
 @pytest.fixture(autouse=True)
-def custom_integrations(enable_custom_integrations) -> None:
+def custom_integrations(request: pytest.FixtureRequest) -> None:
     """Allow the test harness to load Extras from this repository."""
+    if not CORE_TEST_PLUGIN:
+        request.getfixturevalue("enable_custom_integrations")
 
 
 @pytest.fixture
@@ -37,9 +40,11 @@ async def official_entry(hass: HomeAssistant) -> MockConfigEntry:
             OFFICIAL_DOMAIN,
             async_setup_entry=AsyncMock(return_value=True),
             async_unload_entry=AsyncMock(return_value=True),
+            partial_manifest={"version": "1.5.1"},
         ),
+        built_in=False,
     )
-    mock_platform(hass, f"{OFFICIAL_DOMAIN}.config_flow", MagicMock())
+    mock_platform(hass, f"{OFFICIAL_DOMAIN}.config_flow", MagicMock(), built_in=False)
     entry = MockConfigEntry(
         domain=OFFICIAL_DOMAIN,
         title="Test Solarbank",

@@ -19,10 +19,14 @@
 
 ## Development
 
-- Use Python 3.14. The test plugin in `requirements_dev.txt` pins Core 2026.10.4;
-  test that minimum with pymodbus 3.10.0, then upgrade Core to 2026.11.2 and
-  pymodbus to 3.16.2 for the current-version run. The plugin's older Core pin
-  produces a dependency warning during that intentional second-stage upgrade.
+- Use Python 3.14. `requirements_dev.txt` uses official `pytest-homeassistant`
+  matched to Core 2026.11.2. In a separate environment, use
+  `requirements_legacy_test.txt` for Core 2026.10.4 / pymodbus 3.10.0.
+- Never force an incompatible Core version into either test plugin's environment.
+  The old community plugin is broken on Core 2026.11. Tests import helpers through
+  `tests/ha.py`; only the legacy harness requires `enable_custom_integrations`.
+- Keep `-p no:respx` in pytest options: autoloading that plugin can import the old
+  HTTP client before Core initializes its new HTTP client compatibility aliases.
 - Follow Home Assistant's async config-flow, coordinator, entity-description,
   typed `ConfigEntry.runtime_data`, and unload-cleanup patterns.
 - Use Ruff for lint and formatting; run pytest against real Home Assistant

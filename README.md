@@ -159,10 +159,13 @@ ruff format --check .
 pytest --cov=custom_components.anker_solix_extras --cov-report=term-missing
 ```
 
-The published test plugin pins Core 2026.10.4. CI also upgrades Core to 2026.11.2
-after installing the test environment, to exercise the same device-linking
-behaviour on the current release. Tests use real Home Assistant registries and
-mock the official integration and Modbus transport; no battery is required.
+The development requirements use the official `pytest-homeassistant` plugin
+matched to Core 2026.11.2. CI separately installs `requirements_legacy_test.txt`
+to test Core 2026.10.4 with the last compatible community test plugin. Do not
+combine the two harnesses or override their Core pins. The `respx` pytest plugin
+is disabled to preserve Core's HTTP client initialization order.
+Tests use real Home Assistant registries and mock the official integration and
+Modbus transport; no battery is required.
 
 Build a local installation ZIP with `python scripts/build_zip.py`. It writes
 `dist/anker_solix_extras.zip`, containing the `anker_solix_extras` folder ready
