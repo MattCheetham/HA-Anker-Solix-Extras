@@ -12,7 +12,7 @@ from .source import async_get_battery
 
 type AnkerSolixExtrasConfigEntry = ConfigEntry[AnkerSolixExtrasCoordinator]
 
-PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR]
+PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.SWITCH, Platform.NUMBER]
 
 
 async def async_setup_entry(

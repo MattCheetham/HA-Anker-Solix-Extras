@@ -60,8 +60,9 @@ identifiers, or modify the official integration's files or configuration.
 
 Use the public Home Assistant configuration-entry and device-registry APIs.
 Do not import the official integration's Python modules or access its private
-coordinator data. Extras uses its own read-only Modbus connection and picks up
-the official entry's current address when updating.
+coordinator data. Extras uses its own Modbus connection and resolves the
+official entry's current address before polling or writing. Only explicit
+backup reserve actions write to the battery.
 
 Verify setup, reload, unload, and removal with the real Home Assistant registries.
 Removing Extras must leave the official device and entities intact. If the
@@ -150,8 +151,22 @@ through 100 as whole percentages.
 
 Temperature, power and SOH are polled independently. A rejected or invalid SOH
 read makes SOH unavailable until a valid reading arrives. The coordinator reports
-an update failure when all three reads fail. Setup validation still checks the
-temperature register, and existing configurations acquire SOH on reload.
+an update failure when no battery readings are available. Setup validation
+checks the temperature register, and existing configurations acquire SOH on
+reload.
+
+## Backup reserve
+
+Extras reads the capability mask at input register 32775 (FC04). Bit 3
+advertises the switch at 60003 and bit 2 advertises the whole percentage at
+60002. Both are UINT16 holding registers (FC03). FC06 writes one register at
+a time with unit ID 1. The percentage is writable only when a fresh read shows
+that reserve is enabled. Extras checks the capability and reads the setting back
+for each write. A rejected write or a mismatch is surfaced as a service error.
+
+Reserve read failures affect the controls independently of the sensors. Setup,
+polls, reloads, and removal never write reserve settings. Direct hardware writes
+and restoration were verified on a Solarbank 4 E5000 Pro with firmware 1.0.3.37.
 
 ## Polling configuration
 

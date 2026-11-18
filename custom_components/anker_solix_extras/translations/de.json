@@ -3,8 +3,8 @@
   "config": {
     "step": {
       "user": {
-        "title": "Zusätzliche SOLIX-Sensoren hinzufügen",
-        "description": "Wählen Sie einen Akku aus, der bereits in Anker SOLIX Official konfiguriert ist. Extras fügt dem vorhandenen Gerät schreibgeschützte Sensoren hinzu. Einige Messwerte nutzen Funktionen, die Anker nicht offiziell unterstützt.",
+        "title": "SOLIX Extras hinzufügen",
+        "description": "Wählen Sie einen Akku aus, der bereits in Anker SOLIX Official konfiguriert ist. Extras fügt dem vorhandenen Gerät Sensoren und Bedienelemente hinzu.",
         "data": {
           "official_entry_id": "Akku aus Anker SOLIX Official",
           "scan_interval": "Abfrageintervall (Sekunden)"
@@ -32,10 +32,34 @@
         "name": "Akkuheizleistung"
       }
     },
+    "switch": {
+      "backup_reserve": {
+        "name": "Notstromreserve"
+      }
+    },
+    "number": {
+      "backup_reserve_soc": {
+        "name": "Notstromreserve in Prozent"
+      }
+    },
     "binary_sensor": {
       "battery_heating_active": {
         "name": "Akkuheizung aktiv"
       }
+    }
+  },
+  "exceptions": {
+    "reserve_unavailable": {
+      "message": "Die Notstromreserve ist für diesen Akku nicht verfügbar."
+    },
+    "reserve_disabled": {
+      "message": "Schalten Sie die Notstromreserve ein, bevor Sie den Prozentsatz einstellen."
+    },
+    "reserve_write_failed": {
+      "message": "Die Änderung der Notstromreserve konnte nicht bestätigt werden. Prüfen Sie die Verbindung zum Akku und die aktuelle Einstellung."
+    },
+    "reserve_invalid_percentage": {
+      "message": "Geben Sie einen ganzzahligen Prozentsatz zwischen 0 und 100 ein."
     }
   },
   "options": {

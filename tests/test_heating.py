@@ -20,7 +20,7 @@ from custom_components.anker_solix_extras.sensor import AnkerSolixBatteryHeating
 
 
 def get_entities(hass, extras_entry):
-    """Index Extras entities by measurement, independently of naming or order."""
+    """Index Extras entities by unique ID suffix, independently of naming or order."""
     entries = er.async_entries_for_config_entry(
         er.async_get(hass), extras_entry.entry_id
     )
@@ -63,6 +63,8 @@ async def test_extras_entities_share_official_device(
         "battery_heating_power",
         "battery_heating_active",
         "battery_state_of_health",
+        "backup_reserve",
+        "backup_reserve_soc",
     }
     for key, entity in entities.items():
         assert entity.device_id == device.id
@@ -192,7 +194,7 @@ async def test_setup_with_one_measurement_unavailable(
     assert await hass.config_entries.async_setup(extras_entry.entry_id)
     await hass.async_block_till_done()
     entities = get_entities(hass, extras_entry)
-    assert len(entities) == 4
+    assert len(entities) == 6
     assert extras_entry.state is ConfigEntryState.LOADED
     assert hass.states.get(entities["battery_temperature"].entity_id).state == (
         STATE_UNAVAILABLE if failed == "temperature" else "25.0"
@@ -270,7 +272,7 @@ async def test_upgrade_preserves_existing_temperature_entity(
     entities = get_entities(hass, extras_entry)
     assert entities["battery_temperature"].entity_id == original.entity_id
     assert entities["battery_temperature"].name == "My temperature"
-    assert len(entities) == 4
+    assert len(entities) == 6
 
 
 async def test_sources_update_when_estimate_is_unchanged(
