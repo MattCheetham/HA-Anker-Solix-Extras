@@ -125,7 +125,7 @@ restart Home Assistant, or change battery settings automatically.
    entities appear on the existing battery device and temperature retains its ID.
 2. During naturally occurring heating-off and heating-on periods with AC
    absorption, compare the Anker app's heater reading with Extras. Allow for the
-   60-second polling interval and the app's own refresh delay.
+   configured polling interval (60 seconds by default) and the app's own refresh delay.
 3. Record the two signed source attributes, calculated heating, activity state,
    app heater reading, PV generation, and any connected appliance consumption.
    Also observe a period without AC absorption: the estimate must be zero and
@@ -138,3 +138,15 @@ restart Home Assistant, or change battery settings automatically.
    files if needed without deleting the official device or configuration.
 
 Redact addresses, identifiers, and account information before sharing observations.
+
+## Polling configuration
+
+Store the per-battery polling interval in entry.options under scan_interval, in
+seconds; entries without the option retain the 60-second default. Both initial
+setup and the options flow expose the setting. The options flow reloads Extras
+through OptionsFlowWithReload; do not add an Extras entry update listener as well.
+The official entry listener remains separate and refreshes only source settings.
+
+The Linux test container may still mount a historical checkout after moving this
+workspace. Check its bind mount before testing. Copy the current repository into
+an isolated container directory or recreate the mount; do not test stale files.
