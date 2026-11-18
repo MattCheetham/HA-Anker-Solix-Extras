@@ -19,7 +19,10 @@
 
 ## Development
 
-- Use Python 3.14 and Home Assistant 2026.11.2 for initial integration tests.
+- Use Python 3.14. The test plugin in `requirements_dev.txt` pins Core 2026.10.4;
+  test that minimum with pymodbus 3.10.0, then upgrade Core to 2026.11.2 and
+  pymodbus to 3.16.2 for the current-version run. The plugin's older Core pin
+  produces a dependency warning during that intentional second-stage upgrade.
 - Follow Home Assistant's async config-flow, coordinator, entity-description,
   typed `ConfigEntry.runtime_data`, and unload-cleanup patterns.
 - Use Ruff for lint and formatting; run pytest against real Home Assistant
@@ -43,6 +46,16 @@
 
 - Run `ruff check .`, `ruff format --check .`, `pytest`, and `git diff --check`.
 - CI also runs HACS validation and Hassfest.
+- Device registry `devices` iterates device entries, not IDs. Tests compare
+  `{device.id for device in registry.devices}`; do not assume a dict API.
+- Suggested precision is stored by the sensor platform under
+  `entity.options["sensor"]["suggested_display_precision"]`; do not confuse it
+  with a user override under `display_precision`.
+- The official integration test fixture needs a mock config-flow platform and
+  a versioned flow handler even though tests never run Anker's own setup flow.
+- On Windows, the HA pytest plugin imports Linux-only `fcntl`. Run the complete
+  suite in Linux (CI or an isolated rootless Podman container in WSL) rather than
+  stubbing OS modules or claiming plugin-disabled unit tests cover the lifecycle.
 - Keep README installation, compatibility, test, and rollback instructions current.
 - Do not install/restart/change the live Home Assistant instance merely to run
   development tests. Coordinate the hardware test separately with Matthew.
