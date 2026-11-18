@@ -39,12 +39,35 @@
 
 ## Git and releases
 
+- Make every change on a feature branch and open a pull request against `main`.
+  This includes features, fixes, documentation, and maintenance changes.
+- Wait for explicit maintainer approval before merging into `main`. Passing CI
+  is necessary but is not permission to merge. Do not push changes directly to
+  `main`, merge your own PR automatically, or bypass the review workflow.
 - Make focused conventional commits as work progresses (`chore:`, `feat:`,
   `test:`, `fix:`, `docs:`). Do not squash or rewrite the owner's commits.
-- The initial intended version is `0.1`.
-- Never create/push release tags or publish a GitHub release unless Matthew
-  explicitly requests publication. CI checks do not publish releases.
+- Never create/push release tags, publish GitHub releases, or change the version
+  unless a maintainer explicitly requests it. Merging a PR does not authorize
+  a release. CI checks do not publish releases.
 - Update this file when implementation or testing reveals useful constraints.
+
+## Documentation
+
+- Keep the README focused on end users: purpose, sensors, compatibility,
+  installation, everyday use, troubleshooting, and removal.
+- Keep general setup and removal instructions applicable to all Extras sensors.
+  Put sensor-specific details in the sensor table where possible.
+- Put architecture, register behaviour, test harness details, and hardware-test
+  procedures in `CONTRIBUTING.md` or this file instead of the main README.
+- Do not include development/release-status commentary or instructions addressed
+  to a named individual in the README or contributor guidance.
+- Retain a clear statement that Extras uses features outside Anker's published
+  and supported Modbus interface and is used at the user's own risk, with no
+  responsibility accepted by contributors/maintainers for resulting device
+  damage or other loss. Do not imply Anker endorsement or guaranteed compatibility.
+- Extras has now been reported working on a Solarbank 4 E5000 Pro, including
+  attachment to the official device. Do not keep describing that test as pending
+  or imply the other supported models have all been hardware-tested.
 
 ## Verification and handoff
 
@@ -60,6 +83,7 @@
 - On Windows, the HA pytest plugin imports Linux-only `fcntl`. Run the complete
   suite in Linux (CI or an isolated rootless Podman container in WSL) rather than
   stubbing OS modules or claiming plugin-disabled unit tests cover the lifecycle.
-- Keep README installation, compatibility, test, and rollback instructions current.
+- Keep README installation, compatibility, and removal instructions current;
+  keep development and hardware-test guidance in `CONTRIBUTING.md` current.
 - Do not install/restart/change the live Home Assistant instance merely to run
-  development tests. Coordinate the hardware test separately with Matthew.
+  development tests. Coordinate hardware tests separately with the user.
