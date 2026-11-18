@@ -1,0 +1,5 @@
+# The test plugin pins Home Assistant 2026.10.4. CI also tests the current Core
+# release by upgrading Core after installing the matching plugin environment.
+pytest-homeassistant-custom-component==0.13.375
+pymodbus>=3.10.0,<4.0.0
+ruff==0.17.5
