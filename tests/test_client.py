@@ -1,10 +1,14 @@
 """Tests for Modbus register access and measurement decoding."""
 
-from types import SimpleNamespace
-from unittest.mock import AsyncMock, call, patch
+from unittest.mock import call, create_autospec
 
 import pytest
-from pymodbus.exceptions import ModbusException
+from modbus_connection import (
+    IllegalDataAddressError,
+    ModbusConnectionError,
+    ModbusTimeoutError,
+    ModbusUnit,
+)
 
 from custom_components.anker_solix_extras.client import (
     AnkerSolixExtrasClient,
@@ -17,142 +21,63 @@ from custom_components.anker_solix_extras.models import BackupReserve
 
 
 @pytest.fixture
-def transport():
-    """Provide a connected pymodbus transport without network I/O."""
-    with patch(
-        "custom_components.anker_solix_extras.client.AsyncModbusTcpClient",
-        autospec=True,
-    ) as factory:
-        client = factory.return_value
-        client.connected = True
-        client.connect = AsyncMock(return_value=True)
-        client.read_input_registers = AsyncMock()
-        client.read_holding_registers = AsyncMock()
-        client.write_register = AsyncMock()
-        client.write_registers = AsyncMock()
-        yield client
+def unit():
+    """Provide a shared Modbus unit without network I/O."""
+    unit = create_autospec(ModbusUnit, instance=True, spec_set=True)
+    unit.connected = True
+    return unit
 
 
 @pytest.mark.parametrize(
     ("raw", "expected"),
     [(250, 25.0), (0, 0.0), (0xFFCE, -5.0), (253, 25.3), (0xFFCB, -5.3)],
 )
-async def test_read_temperature(transport, raw, expected) -> None:
-    transport.read_input_registers.return_value = SimpleNamespace(
-        registers=[raw], isError=lambda: False
+async def test_read_temperature(unit, raw, expected) -> None:
+    unit.read_input_registers.return_value = [raw]
+    assert await AnkerSolixExtrasClient(unit).async_read_temperature() == pytest.approx(
+        expected
     )
-    client = AnkerSolixExtrasClient("192.0.2.10", 502)
-    assert await client.async_read_temperature() == pytest.approx(expected)
-    transport.read_input_registers.assert_awaited_once_with(
-        address=10156, count=1, device_id=1
-    )
-    transport.write_register.assert_not_called()
-    transport.write_registers.assert_not_called()
-    transport.close.assert_not_called()
+    unit.read_input_registers.assert_awaited_once_with(10156, 1)
+    unit.write_register.assert_not_called()
+    unit.write_registers.assert_not_called()
 
 
 @pytest.mark.parametrize("registers", [[], [1, 2], [None], [True], [-1], [65536]])
-async def test_bad_response_is_not_a_zero_temperature(transport, registers) -> None:
-    transport.read_input_registers.return_value = SimpleNamespace(
-        registers=registers, isError=lambda: False
-    )
-    client = AnkerSolixExtrasClient("192.0.2.10", 502)
+async def test_bad_response_is_not_a_zero_temperature(unit, registers) -> None:
+    unit.read_input_registers.return_value = registers
+    with pytest.raises(TemperatureReadError):
+        await AnkerSolixExtrasClient(unit).async_read_temperature()
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        OSError("offline"),
+        ModbusConnectionError("offline"),
+        ModbusTimeoutError("timeout"),
+    ],
+)
+async def test_transport_failure_then_recovery(unit, error) -> None:
+    unit.read_input_registers.side_effect = [error, [250]]
+    client = AnkerSolixExtrasClient(unit)
     with pytest.raises(TemperatureReadError):
         await client.async_read_temperature()
-    transport.close.assert_called_once()
-
-
-async def test_rejected_register_closes_connection(transport) -> None:
-    transport.read_input_registers.return_value = SimpleNamespace(isError=lambda: True)
-    client = AnkerSolixExtrasClient("192.0.2.10", 502)
-    with pytest.raises(TemperatureReadError, match="rejected"):
-        await client.async_read_temperature()
-    transport.close.assert_called_once()
-
-
-async def test_connection_failure(transport) -> None:
-    transport.connected = False
-    transport.connect.return_value = False
-    client = AnkerSolixExtrasClient("192.0.2.10", 502)
-    with pytest.raises(TemperatureReadError, match="connect"):
-        await client.async_read_temperature()
-    transport.read_input_registers.assert_not_called()
-
-
-@pytest.mark.parametrize("error", [OSError("offline"), ModbusException("timeout")])
-async def test_transport_failure(transport, error) -> None:
-    transport.read_input_registers.side_effect = error
-    client = AnkerSolixExtrasClient("192.0.2.10", 502)
-    with pytest.raises(TemperatureReadError):
-        await client.async_read_temperature()
-    transport.close.assert_called_once()
-
-
-async def test_reconnects_when_disconnected(transport) -> None:
-    transport.connected = False
-    transport.read_input_registers.return_value = SimpleNamespace(
-        registers=[250], isError=lambda: False
-    )
-    client = AnkerSolixExtrasClient("192.0.2.10", 502)
     assert await client.async_read_temperature() == 25
-    transport.connect.assert_awaited_once()
 
 
 @pytest.mark.parametrize("value", [0, 87, 100])
-async def test_read_state_of_health(transport, value) -> None:
+async def test_read_state_of_health(unit, value) -> None:
     """Use the read-only register and return the whole percentage as reported."""
-    transport.read_input_registers.return_value = SimpleNamespace(
-        registers=[value], isError=lambda: False
-    )
-    client = AnkerSolixExtrasClient("192.0.2.10", 502)
-    assert await client.async_read_state_of_health() == value
-    transport.read_input_registers.assert_awaited_once_with(
-        address=10015, count=1, device_id=1
-    )
-    transport.close.assert_not_called()
+    unit.read_input_registers.return_value = [value]
+    assert await AnkerSolixExtrasClient(unit).async_read_state_of_health() == value
+    unit.read_input_registers.assert_awaited_once_with(10015, 1)
 
 
 @pytest.mark.parametrize("registers", [[], [87, 87], [True], [-1], [101], [0xFFFF]])
-async def test_invalid_state_of_health(transport, registers) -> None:
-    """Reject malformed replies and values outside the percentage range."""
-    transport.read_input_registers.return_value = SimpleNamespace(
-        registers=registers, isError=lambda: False
-    )
-    client = AnkerSolixExtrasClient("192.0.2.10", 502)
+async def test_invalid_state_of_health(unit, registers) -> None:
+    unit.read_input_registers.return_value = registers
     with pytest.raises(StateOfHealthReadError, match="Invalid"):
-        await client.async_read_state_of_health()
-    transport.close.assert_called_once()
-
-
-async def test_rejected_state_of_health(transport) -> None:
-    """Handle devices that reject the SOH register read."""
-    transport.read_input_registers.return_value = SimpleNamespace(isError=lambda: True)
-    with pytest.raises(StateOfHealthReadError, match="rejected"):
-        await AnkerSolixExtrasClient("192.0.2.10", 502).async_read_state_of_health()
-    transport.close.assert_called_once()
-
-
-async def test_state_of_health_transport_failure(transport) -> None:
-    """Surface a timeout as a failed measurement and release the connection."""
-    transport.read_input_registers.side_effect = TimeoutError()
-    with pytest.raises(StateOfHealthReadError):
-        await AnkerSolixExtrasClient("192.0.2.10", 502).async_read_state_of_health()
-    transport.close.assert_called_once()
-
-
-async def test_state_of_health_connection_failure(transport) -> None:
-    """Skip the register read if the transport could not reconnect."""
-    transport.connected = False
-    transport.connect.return_value = False
-    with pytest.raises(StateOfHealthReadError, match="connect"):
-        await AnkerSolixExtrasClient("192.0.2.10", 502).async_read_state_of_health()
-    transport.read_input_registers.assert_not_awaited()
-    transport.close.assert_called_once()
-
-
-def test_close_releases_own_transport(transport) -> None:
-    AnkerSolixExtrasClient("192.0.2.10", 502).close()
-    transport.close.assert_called_once()
+        await AnkerSolixExtrasClient(unit).async_read_state_of_health()
 
 
 @pytest.mark.parametrize(
@@ -165,20 +90,15 @@ def test_close_releases_own_transport(transport) -> None:
         ([0xFFFF, 0xFFFF, 0, 1], -1, 1),
     ],
 )
-async def test_read_power_in_one_request(transport, registers, ac, battery) -> None:
+async def test_read_power_in_one_request(unit, registers, ac, battery) -> None:
     """Decode both signed powers from one four-register snapshot, high word first."""
-    transport.read_input_registers.return_value = SimpleNamespace(
-        registers=registers, isError=lambda: False
-    )
-    power = await AnkerSolixExtrasClient("192.0.2.10", 502).async_read_power()
+    unit.read_input_registers.return_value = registers
+    power = await AnkerSolixExtrasClient(unit).async_read_power()
     assert power.ac_power == ac
     assert power.battery_power == battery
-    transport.read_input_registers.assert_awaited_once_with(
-        address=10006, count=4, device_id=1
-    )
-    transport.write_register.assert_not_called()
-    transport.write_registers.assert_not_called()
-    transport.close.assert_not_called()
+    unit.read_input_registers.assert_awaited_once_with(10006, 4)
+    unit.write_register.assert_not_called()
+    unit.write_registers.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -197,57 +117,36 @@ async def test_read_power_in_one_request(transport, registers, ac, battery) -> N
         None,
     ],
 )
-async def test_invalid_power_response_is_not_zero(transport, registers) -> None:
-    """Reject incomplete words, bools, nonintegers, and out-of-range values."""
-    transport.read_input_registers.return_value = SimpleNamespace(
-        registers=registers, isError=lambda: False
-    )
+async def test_invalid_power_response_is_not_zero(unit, registers) -> None:
+    unit.read_input_registers.return_value = registers
     with pytest.raises(PowerReadError):
-        await AnkerSolixExtrasClient("192.0.2.10", 502).async_read_power()
-    transport.close.assert_called_once()
+        await AnkerSolixExtrasClient(unit).async_read_power()
 
 
-async def test_rejected_power_read(transport) -> None:
-    """A rejected request cannot be interpreted as inactive heating."""
-    transport.read_input_registers.return_value = SimpleNamespace(isError=lambda: True)
-    with pytest.raises(PowerReadError, match="rejected"):
-        await AnkerSolixExtrasClient("192.0.2.10", 502).async_read_power()
-    transport.close.assert_called_once()
+async def test_power_read_after_temperature_rejection(unit) -> None:
+    """A rejected temperature register does not prevent a fresh power read."""
+    unit.read_input_registers.side_effect = [
+        IllegalDataAddressError("not supported"),
+        [0, 0, 0, 0],
+    ]
+    client = AnkerSolixExtrasClient(unit)
+    with pytest.raises(TemperatureReadError):
+        await client.async_read_temperature()
+    assert (await client.async_read_power()).heating_power == 0
 
 
 @pytest.mark.parametrize(
-    "error", [OSError("offline"), ModbusException("failure"), TimeoutError()]
+    ("method", "error"),
+    [
+        ("async_read_power", PowerReadError),
+        ("async_read_state_of_health", StateOfHealthReadError),
+        ("async_read_backup_reserve", BackupReserveError),
+    ],
 )
-async def test_power_transport_failure(transport, error) -> None:
-    """Wrap transport failures and release the owned connection."""
-    transport.read_input_registers.side_effect = error
-    with pytest.raises(PowerReadError):
-        await AnkerSolixExtrasClient("192.0.2.10", 502).async_read_power()
-    transport.close.assert_called_once()
-
-
-async def test_power_connection_failure(transport) -> None:
-    """Do not read from a connection that could not be established."""
-    transport.connected = False
-    transport.connect.return_value = False
-    with pytest.raises(PowerReadError, match="connect"):
-        await AnkerSolixExtrasClient("192.0.2.10", 502).async_read_power()
-    transport.read_input_registers.assert_not_awaited()
-    transport.close.assert_called_once()
-
-
-async def test_power_reconnects_after_temperature_failure(transport) -> None:
-    """A rejected temperature register does not prevent a fresh power read."""
-    transport.read_input_registers.side_effect = [
-        SimpleNamespace(isError=lambda: True),
-        SimpleNamespace(registers=[0, 0, 0, 0], isError=lambda: False),
-    ]
-    client = AnkerSolixExtrasClient("192.0.2.10", 502)
-    with pytest.raises(TemperatureReadError):
-        await client.async_read_temperature()
-    transport.connected = False
-    assert (await client.async_read_power()).heating_power == 0
-    transport.connect.assert_awaited_once()
+async def test_transport_error_is_reported_for_each_measurement(unit, method, error):
+    unit.read_input_registers.side_effect = IllegalDataAddressError("not supported")
+    with pytest.raises(error):
+        await getattr(AnkerSolixExtrasClient(unit), method)()
 
 
 @pytest.mark.parametrize(
@@ -259,61 +158,50 @@ async def test_power_reconnects_after_temperature_failure(transport) -> None:
         (3, [], None, None),
     ],
 )
-async def test_read_backup_reserve(
-    transport, mask, registers, address, expected
-) -> None:
-    transport.read_input_registers.return_value = SimpleNamespace(
-        registers=[mask], isError=lambda: False
-    )
-    transport.read_holding_registers.return_value = SimpleNamespace(
-        registers=registers, isError=lambda: False
-    )
-    client = AnkerSolixExtrasClient("192.0.2.10", 502)
-    assert await client.async_read_backup_reserve() == expected
-    transport.read_input_registers.assert_awaited_once_with(
-        address=32775, count=1, device_id=1
-    )
+async def test_read_backup_reserve(unit, mask, registers, address, expected) -> None:
+    unit.read_input_registers.return_value = [mask]
+    unit.read_holding_registers.return_value = registers
+    assert await AnkerSolixExtrasClient(unit).async_read_backup_reserve() == expected
+    unit.read_input_registers.assert_awaited_once_with(32775, 1)
     if address is None:
-        transport.read_holding_registers.assert_not_awaited()
+        unit.read_holding_registers.assert_not_awaited()
     else:
-        transport.read_holding_registers.assert_awaited_once_with(
-            address=address, count=len(registers), device_id=1
-        )
-    transport.write_register.assert_not_awaited()
+        unit.read_holding_registers.assert_awaited_once_with(address, len(registers))
+    unit.write_register.assert_not_awaited()
 
 
 @pytest.mark.parametrize("registers", [[], [50], [101, 1], [50, 2], [0, True]])
-async def test_invalid_backup_reserve_response(transport, registers) -> None:
-    transport.read_input_registers.return_value = SimpleNamespace(
-        registers=[15], isError=lambda: False
-    )
-    transport.read_holding_registers.return_value = SimpleNamespace(
-        registers=registers, isError=lambda: False
-    )
+async def test_invalid_backup_reserve_response(unit, registers) -> None:
+    unit.read_input_registers.return_value = [15]
+    unit.read_holding_registers.return_value = registers
     with pytest.raises(BackupReserveError, match="Invalid reserve"):
-        await AnkerSolixExtrasClient("192.0.2.10", 502).async_read_backup_reserve()
+        await AnkerSolixExtrasClient(unit).async_read_backup_reserve()
 
 
-async def test_write_backup_reserve_uses_only_single_register_writes(transport) -> None:
-    transport.write_register.return_value = SimpleNamespace(isError=lambda: False)
-    client = AnkerSolixExtrasClient("192.0.2.10", 502)
+async def test_write_backup_reserve_uses_only_single_register_writes(unit) -> None:
+    client = AnkerSolixExtrasClient(unit)
     await client.async_write_reserve_enabled(True)
     await client.async_write_reserve_percentage(0)
     await client.async_write_reserve_percentage(100)
     await client.async_write_reserve_enabled(False)
-    assert transport.write_register.await_args_list == [
-        call(address=60003, value=1, device_id=1),
-        call(address=60002, value=0, device_id=1),
-        call(address=60002, value=100, device_id=1),
-        call(address=60003, value=0, device_id=1),
+    assert unit.write_register.await_args_list == [
+        call(60003, 1),
+        call(60002, 0),
+        call(60002, 100),
+        call(60003, 0),
     ]
-    transport.write_registers.assert_not_awaited()
+    unit.write_registers.assert_not_awaited()
 
 
-async def test_rejected_backup_reserve_write(transport) -> None:
-    transport.write_register.return_value = SimpleNamespace(isError=lambda: True)
-    with pytest.raises(BackupReserveError, match="rejected"):
-        await AnkerSolixExtrasClient("192.0.2.10", 502).async_write_reserve_enabled(
-            True
-        )
-    transport.close.assert_called_once()
+async def test_rejected_backup_reserve_write(unit) -> None:
+    unit.write_register.side_effect = IllegalDataAddressError("not supported")
+    with pytest.raises(BackupReserveError):
+        await AnkerSolixExtrasClient(unit).async_write_reserve_enabled(True)
+    unit.write_register.assert_awaited_once_with(60003, 1)
+
+
+async def test_disconnected_backup_reserve_write_is_skipped(unit) -> None:
+    unit.connected = False
+    with pytest.raises(BackupReserveError, match="disconnected"):
+        await AnkerSolixExtrasClient(unit).async_write_reserve_enabled(True)
+    unit.write_register.assert_not_awaited()

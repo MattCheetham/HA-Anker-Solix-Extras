@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
+from modbus_connection import ModbusTcpParams
 
 from .const import OFFICIAL_DOMAIN, SUPPORTED_MODELS
 
@@ -17,6 +18,11 @@ class OfficialBattery:
     device: dr.DeviceEntry
     host: str
     port: int
+
+    @property
+    def modbus_params(self) -> ModbusTcpParams:
+        """Use the source endpoint with Home Assistant's shared TCP defaults."""
+        return ModbusTcpParams(host=self.host, port=self.port)
 
 
 @callback

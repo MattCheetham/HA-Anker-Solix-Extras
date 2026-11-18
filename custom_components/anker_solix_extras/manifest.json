@@ -5,10 +5,11 @@
   "categories": ["energy.solar_batteries"],
   "codeowners": ["@MattCheetham"],
   "config_flow": true,
+  "connectivity": ["modbus"],
+  "dependencies": ["modbus"],
   "documentation": "https://github.com/MattCheetham/HA-Anker-Solix-Extras",
   "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/MattCheetham/HA-Anker-Solix-Extras/issues",
-  "requirements": ["pymodbus>=3.10.0,<4.0.0"],
   "version": "0.2.0b1"
 }

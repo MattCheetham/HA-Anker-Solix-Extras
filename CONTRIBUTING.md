@@ -60,9 +60,11 @@ identifiers, or modify the official integration's files or configuration.
 
 Use the public Home Assistant configuration-entry and device-registry APIs.
 Do not import the official integration's Python modules or access its private
-coordinator data. Extras uses its own Modbus connection and resolves the
-official entry's current address before polling or writing. Only explicit
-backup reserve actions write to the battery.
+coordinator data. Extras registers a unit with Home Assistant's shared Modbus
+integration using the official entry's TCP address. Home Assistant owns that
+connection and releases Extras' registration on unload. A change to the
+official entry's address reloads Extras to register the new endpoint. Only
+explicit backup reserve actions write to the battery.
 
 Verify setup, reload, unload, and removal with the real Home Assistant registries.
 Removing Extras must leave the official device and entities intact. If the
