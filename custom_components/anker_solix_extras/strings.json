@@ -23,15 +23,15 @@
   "entity": {
     "sensor": {
       "battery_temperature": {
-        "name": "Battery temperature"
+        "name": "Battery Temperature"
       },
       "battery_heating_power": {
-        "name": "Battery heating power"
+        "name": "Battery Heating Power"
       }
     },
     "binary_sensor": {
       "battery_heating_active": {
-        "name": "Battery heating active"
+        "name": "Battery Heating Active"
       }
     }
   },

@@ -44,6 +44,7 @@ async def test_sensor_attaches_to_official_device(
     assert {device.id for device in dr.async_get(hass).devices} == devices_before
     state = hass.states.get(entity.entity_id)
     assert state.state == "25.0"
+    assert state.name.endswith("Battery Temperature")
     assert state.attributes["unit_of_measurement"] == "°C"
     assert state.attributes["device_class"] == "temperature"
     assert state.attributes["state_class"] == "measurement"

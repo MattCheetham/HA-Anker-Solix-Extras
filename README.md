@@ -13,9 +13,9 @@ This is an independent community project, not developed or supported by Anker.
 
 | Sensor | Source | Display |
 | --- | --- | --- |
-| Battery temperature | Input register 10156, unit ID 1, signed INT16 divided by 10 | °C, whole degrees by default |
-| Battery heating power | Estimated from battery and AC power during AC absorption; may include conversion losses or other consumption | W, whole watts by default |
-| Battery heating active | On when estimated heating power is greater than zero; shares the estimate's limitations | On / off |
+| Battery Temperature | Input register 10156, unit ID 1, signed INT16 divided by 10 | °C, whole degrees by default |
+| Battery Heating Power | Estimated from battery and AC power during AC absorption; may include conversion losses or other consumption | W, whole watts by default |
+| Battery Heating Active | On when estimated heating power is greater than zero; shares the estimate's limitations | On / off |
 
 ## Important
 

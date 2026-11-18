@@ -75,7 +75,7 @@ async def test_heating_entities_share_official_device(
     power = entities["battery_heating_power"]
     state = hass.states.get(power.entity_id)
     assert state.state == "240"
-    assert state.name.endswith("Battery heating power")
+    assert state.name.endswith("Battery Heating Power")
     assert state.attributes["unit_of_measurement"] == "W"
     assert state.attributes["device_class"] == "power"
     assert state.attributes["state_class"] == "measurement"
@@ -84,7 +84,7 @@ async def test_heating_entities_share_official_device(
     assert power.options["sensor"]["suggested_display_precision"] == 0
     active = hass.states.get(entities["battery_heating_active"].entity_id)
     assert active.state == "on"
-    assert active.name.endswith("Battery heating active")
+    assert active.name.endswith("Battery Heating Active")
     assert "device_class" not in active.attributes
     assert active.attributes["icon"] == "mdi:radiator"
     assert "unit_of_measurement" not in active.attributes
