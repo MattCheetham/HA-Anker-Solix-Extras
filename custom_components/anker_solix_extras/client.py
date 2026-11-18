@@ -3,11 +3,21 @@
 from pymodbus.client import AsyncModbusTcpClient
 from pymodbus.exceptions import ModbusException
 
-from .const import BATTERY_TEMPERATURE_ADDRESS, MODBUS_DEVICE_ID, MODBUS_TIMEOUT
+from .const import (
+    AC_POWER_ADDRESS,
+    BATTERY_TEMPERATURE_ADDRESS,
+    MODBUS_DEVICE_ID,
+    MODBUS_TIMEOUT,
+)
+from .models import BatteryPower
 
 
 class TemperatureReadError(Exception):
     """A temperature reading could not be obtained."""
+
+
+class PowerReadError(Exception):
+    """A pair of power readings could not be obtained."""
 
 
 class AnkerSolixExtrasClient:
@@ -54,3 +64,38 @@ class AnkerSolixExtrasClient:
     def close(self) -> None:
         """Release only this integration's connection."""
         self._client.close()
+
+    async def async_read_power(self) -> BatteryPower:
+        """Read AC and battery power together as high-word-first signed INT32."""
+        try:
+            if not self._client.connected and not await self._client.connect():
+                raise PowerReadError("Unable to connect to the battery")
+            response = await self._client.read_input_registers(
+                address=AC_POWER_ADDRESS,
+                count=4,
+                device_id=MODBUS_DEVICE_ID,
+            )
+            if response.isError():
+                raise PowerReadError("The battery rejected the power read")
+            registers = response.registers
+            if len(registers) != 4 or any(
+                type(word) is not int or not 0 <= word <= 0xFFFF for word in registers
+            ):
+                raise PowerReadError("Invalid power response")
+            values = []
+            for offset in (0, 2):
+                raw = (registers[offset] << 16) | registers[offset + 1]
+                values.append(raw - 0x100000000 if raw & 0x80000000 else raw)
+            return BatteryPower(ac_power=values[0], battery_power=values[1])
+        except (
+            ModbusException,
+            OSError,
+            TimeoutError,
+            AttributeError,
+            TypeError,
+        ) as err:
+            self.close()
+            raise PowerReadError("Unable to read battery power") from err
+        except PowerReadError:
+            self.close()
+            raise

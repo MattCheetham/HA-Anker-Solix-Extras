@@ -6,14 +6,15 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .client import AnkerSolixExtrasClient, TemperatureReadError
+from .client import AnkerSolixExtrasClient, PowerReadError, TemperatureReadError
 from .const import CONF_OFFICIAL_ENTRY_ID, DOMAIN, UPDATE_INTERVAL
+from .models import BatteryMeasurements
 from .source import OfficialBattery, async_get_battery
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[float]):
+class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
     """Poll additional registers at a modest interval."""
 
     def __init__(
@@ -33,7 +34,7 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[float]):
         self._address = (battery.host, battery.port)
         self._client = AnkerSolixExtrasClient(*self._address)
 
-    async def _async_update_data(self) -> float:
+    async def _async_update_data(self) -> BatteryMeasurements:
         """Resolve the current address and fetch a fresh reading."""
         battery = async_get_battery(self.hass, self.official_entry_id)
         if battery is None or battery.device.id != self.device.id:
@@ -46,10 +47,19 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[float]):
             self._address = address
             self._client = AnkerSolixExtrasClient(*address)
 
+        temperature = None
+        power = None
         try:
-            return await self._client.async_read_temperature()
+            temperature = await self._client.async_read_temperature()
         except TemperatureReadError as err:
-            raise UpdateFailed(str(err)) from err
+            _LOGGER.debug("Temperature read failed: %s", err)
+        try:
+            power = await self._client.async_read_power()
+        except PowerReadError as err:
+            _LOGGER.debug("Power read failed: %s", err)
+        if temperature is None and power is None:
+            raise UpdateFailed("Unable to read battery temperature or power")
+        return BatteryMeasurements(temperature=temperature, power=power)
 
     async def async_shutdown(self) -> None:
         """Stop polling and close the Extras connection."""
