@@ -1,0 +1,29 @@
+{
+  "title": "Anker SOLIX Extras",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add extra SOLIX sensors",
+        "description": "Select a battery already configured in Anker SOLIX Official. Extras adds a read-only battery temperature sensor to its existing device. This uses an undocumented register that Anker does not officially support.",
+        "data": {
+          "official_entry_id": "Official Anker battery"
+        }
+      }
+    },
+    "error": {
+      "battery_unavailable": "The selected official battery is no longer available. Check that it is enabled and loaded, then try again.",
+      "cannot_read_temperature": "Could not read the battery temperature. Check the battery connection and that its firmware exposes input register 10156."
+    },
+    "abort": {
+      "already_configured": "Extras is already configured for this battery.",
+      "no_official_batteries": "No supported batteries are ready in Anker SOLIX Official. Install and configure the official integration first, and make sure its battery device is enabled and available."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_temperature": {
+        "name": "Battery temperature"
+      }
+    }
+  }
+}
