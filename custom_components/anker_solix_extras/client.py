@@ -11,10 +11,8 @@ from .const import (
     RESERVE_CAPABILITY_ADDRESS,
     RESERVE_ENABLE_ADDRESS,
     RESERVE_ENABLE_CAPABILITY,
-    RESERVE_PERCENTAGE_ADDRESS,
-    RESERVE_PERCENTAGE_CAPABILITY,
 )
-from .models import BackupReserve, BatteryPower
+from .models import BatteryPower
 
 
 class TemperatureReadError(Exception):
@@ -30,7 +28,7 @@ class StateOfHealthReadError(Exception):
 
 
 class BackupReserveError(Exception):
-    """The backup reserve settings could not be read."""
+    """The backup reserve switch state could not be read."""
 
 
 class RegisterWriteError(Exception):
@@ -97,39 +95,25 @@ class AnkerSolixExtrasClient:
             raise StateOfHealthReadError("Invalid SOH response")
         return registers[0]
 
-    async def async_read_backup_reserve(self) -> BackupReserve | None:
-        """Read the advertised reserve controls and their current values."""
+    async def async_read_backup_reserve(self) -> bool | None:
+        """Read the reserve switch state if the battery advertises it."""
         try:
             registers = await self._unit.read_input_registers(
                 RESERVE_CAPABILITY_ADDRESS, 1
             )
             if not _valid_words(registers, 1):
                 raise BackupReserveError("Invalid reserve capability response")
-            mask = registers[0]
-            switch_supported = bool(mask & RESERVE_ENABLE_CAPABILITY)
-            percentage_supported = bool(mask & RESERVE_PERCENTAGE_CAPABILITY)
-            if not (switch_supported or percentage_supported):
+            if not registers[0] & RESERVE_ENABLE_CAPABILITY:
                 return None
 
-            # The percentage's write condition needs the enable flag even when
-            # the device does not advertise that the flag itself is writable.
-            address, count = (
-                (RESERVE_PERCENTAGE_ADDRESS, 2)
-                if percentage_supported
-                else (RESERVE_ENABLE_ADDRESS, 1)
+            registers = await self._unit.read_holding_registers(
+                RESERVE_ENABLE_ADDRESS, 1
             )
-            registers = await self._unit.read_holding_registers(address, count)
         except (ModbusError, OSError) as err:
             raise BackupReserveError("Unable to read backup reserve") from err
-        if not _valid_words(registers, count):
-            raise BackupReserveError("Invalid reserve settings response")
-        enabled = registers[-1]
-        percentage = registers[0] if percentage_supported else None
-        if enabled not in (0, 1):
+        if not _valid_words(registers, 1) or registers[0] not in (0, 1):
             raise BackupReserveError("Invalid reserve enable flag")
-        if percentage is not None and percentage > 100:
-            raise BackupReserveError("Invalid reserve percentage")
-        return BackupReserve(bool(enabled), switch_supported, percentage)
+        return bool(registers[0])
 
     async def async_write_register(self, address: int, value: int) -> None:
         """Write one holding register (FC06) on the active connection."""

@@ -15,7 +15,8 @@
   explicit controls. Each control checks capability and fresh state before
   writing, then confirms the result by reading it back. Polling and setup are
   read-only.
-- Only the backup reserve controls may write registers 60002 and 60003.
+- The backup reserve switch writes register 60003. The official integration
+  provides the reserve percentage control.
 - Additional entities belong to Extras but attach to the official device using
   `entity.device_entry` with `device_info` unset. Matching identifiers alone
   does not share a device across config entries in recent Home Assistant.

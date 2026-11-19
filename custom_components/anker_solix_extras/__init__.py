@@ -10,15 +10,35 @@ from homeassistant.exceptions import (
     HomeAssistantError,
 )
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 
 from .client import AnkerSolixExtrasClient
-from .const import CONF_OFFICIAL_ENTRY_ID, MODBUS_DEVICE_ID
+from .const import CONF_OFFICIAL_ENTRY_ID, DOMAIN, MODBUS_DEVICE_ID
 from .coordinator import AnkerSolixExtrasCoordinator
 from .source import async_get_battery
 
 type AnkerSolixExtrasConfigEntry = ConfigEntry[AnkerSolixExtrasCoordinator]
 
-PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.SWITCH, Platform.NUMBER]
+PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.SWITCH]
+
+
+async def async_migrate_entry(
+    hass: HomeAssistant, entry: AnkerSolixExtrasConfigEntry
+) -> bool:
+    """Remove the legacy Extras reserve number from existing config entries."""
+    if entry.version != 1:
+        return False
+
+    if entry.minor_version < 2:
+        registry = er.async_get(hass)
+        source_entry_id = entry.data[CONF_OFFICIAL_ENTRY_ID]
+        entity_id = registry.async_get_entity_id(
+            Platform.NUMBER, DOMAIN, f"{source_entry_id}_backup_reserve_soc"
+        )
+        if entity_id is not None:
+            registry.async_remove(entity_id)
+        hass.config_entries.async_update_entry(entry, minor_version=2)
+    return True
 
 
 async def async_setup_entry(
