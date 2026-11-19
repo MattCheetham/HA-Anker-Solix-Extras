@@ -26,7 +26,7 @@
         "name": "Akkutemperatur"
       },
       "battery_state_of_health": {
-        "name": "Akkugesundheit"
+        "name": "Batteriegesundheit"
       },
       "battery_heating_power": {
         "name": "Akkuheizleistung"
