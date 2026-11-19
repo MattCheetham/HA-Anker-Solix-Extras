@@ -63,7 +63,7 @@
   reads/reconnection; setup/reload/unload; shared device identity; and safe removal.
 - Never put live IP addresses, serial numbers, credentials, tokens, or real
   config-entry/device IDs into source, fixtures, documentation, or commit text.
-- Keep test environments, downloaded tooling, and logs outside the repository.
+- Keep test environments, downloaded tooling, and logs out of Git.
 
 ## Git and releases
 
@@ -88,7 +88,7 @@
   and publishing the release. A release PR or release branch is not required.
   This exception does not authorize unrelated feature or fix changes. Mark beta
   releases as GitHub prereleases and leave the latest stable release unchanged.
-- Update this file when implementation or testing reveals useful constraints.
+- Update this file when a lasting constraint changes how agents should work.
 
 ## Documentation
 
@@ -104,17 +104,17 @@
   their limitations in the README rather than in setup text.
 - Keep general setup and removal instructions applicable to all Extras entities.
   Put sensor-specific details in the sensor table where possible.
-- Put architecture, register behaviour, test harness details, and hardware-test
-  procedures in `CONTRIBUTING.md` or this file instead of the main README.
+- Keep `CONTRIBUTING.md` focused on development setup, validation, and review.
+  Keep implementation behaviour in source and tests. Keep hardware observations,
+  investigation notes, and local tooling details in the workspace outside the
+  repository.
 - Do not include development/release-status commentary or instructions addressed
   to a named individual in the README or contributor guidance.
 - Retain a clear statement that Extras uses features outside Anker's published
   and supported Modbus interface and is used at the user's own risk, with no
   responsibility accepted by contributors/maintainers for resulting device
   damage or other loss. Do not imply Anker endorsement or guaranteed compatibility.
-- Extras has now been reported working on a Solarbank 4 E5000 Pro, including
-  attachment to the official device. Do not keep describing that test as pending
-  or imply the other supported models have all been hardware-tested.
+- Use the README's compatibility table for the current hardware-test status.
 
 ## Verification and handoff
 
