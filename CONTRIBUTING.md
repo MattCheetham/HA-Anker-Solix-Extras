@@ -66,13 +66,3 @@ from fixtures, logs, and reports.
 For changes to setup or entities, verify that reload and restart preserve
 existing entity IDs. If you need to roll back a test build, restore the previous
 Extras files and leave the official integration and device in place.
-
-### Manual heating comparison
-
-Compare the Anker app's heater reading with Extras during both heating-on and
-heating-off periods with AC absorption. Allow time for both readings to refresh.
-Record the two signed power attributes, estimated power, activity state, app
-reading, and any known PV generation or load. Include a period without AC
-absorption to verify that the estimate is zero and activity is off. Report any
-repeatable differences, including positive estimates while the app shows the
-heater off.
