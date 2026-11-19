@@ -40,7 +40,6 @@ class AnkerSolixExtrasConfigFlow(ConfigFlow, domain=DOMAIN):
     """Create one Extras entry per official battery."""
 
     VERSION = 1
-    MINOR_VERSION = 2
 
     @staticmethod
     @callback
