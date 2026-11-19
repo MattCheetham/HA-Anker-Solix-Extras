@@ -96,7 +96,7 @@ async def test_extras_entities_share_official_device(
     soh = entities["battery_state_of_health"]
     state = hass.states.get(soh.entity_id)
     assert state.state == "100"
-    assert state.name.endswith("Battery State of Health")
+    assert state.name.endswith("Battery SOH")
     assert state.attributes["unit_of_measurement"] == "%"
     assert state.attributes["state_class"] == "measurement"
     assert soh.options["sensor"]["suggested_display_precision"] == 0
