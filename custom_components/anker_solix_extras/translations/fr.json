@@ -66,10 +66,14 @@
   "options": {
     "step": {
       "init": {
-        "title": "Paramètres d'interrogation",
+        "title": "Paramètres de l’intégration",
         "description": "Choisissez la fréquence de lecture de la batterie par Extras via Modbus. Saisissez un nombre entier de secondes, au moins égal à 1. La valeur par défaut est de 60 secondes.",
         "data": {
-          "scan_interval": "Intervalle d'interrogation (secondes)"
+          "scan_interval": "Intervalle d'interrogation (secondes)",
+          "enable_off_grid_output_power": "Activer la puissance de sortie hors réseau (bêta)"
+        },
+        "data_description": {
+          "enable_off_grid_output_power": "Pour tester ce modèle. Les mesures peuvent être indisponibles ou imprécises."
         }
       }
     }

@@ -21,6 +21,7 @@ from .client import (
     TemperatureReadError,
 )
 from .const import (
+    CONF_ENABLE_OFF_GRID_OUTPUT_POWER,
     CONF_OFFICIAL_ENTRY_ID,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
@@ -56,8 +57,9 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
         )
         self.official_entry_id: str = entry.data[CONF_OFFICIAL_ENTRY_ID]
         self.device = battery.device
-        self.supports_off_grid_output_power = (
+        self.off_grid_output_power_enabled = (
             battery.device.model == SOLARBANK_4_E5000_PRO
+            or entry.options.get(CONF_ENABLE_OFF_GRID_OUTPUT_POWER, False)
         )
         self._params = battery.modbus_params
         self._client = client
@@ -104,7 +106,7 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
             state_of_health = await client.async_read_state_of_health()
         except StateOfHealthReadError as err:
             _LOGGER.debug("State of health read failed: %s", err)
-        if self.supports_off_grid_output_power:
+        if self.off_grid_output_power_enabled:
             try:
                 off_grid_output_power = await client.async_read_off_grid_output_power()
             except OffGridOutputPowerReadError as err:

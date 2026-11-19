@@ -66,10 +66,14 @@
   "options": {
     "step": {
       "init": {
-        "title": "Abfrageeinstellungen",
+        "title": "Integrationseinstellungen",
         "description": "Legen Sie fest, wie oft Extras die Batterie über Modbus abfragt. Geben Sie eine ganze Zahl von mindestens 1 Sekunde ein. Der Standardwert beträgt 60 Sekunden.",
         "data": {
-          "scan_interval": "Abfrageintervall (Sekunden)"
+          "scan_interval": "Abfrageintervall (Sekunden)",
+          "enable_off_grid_output_power": "Inselbetrieb-Ausgangsleistung aktivieren (Beta)"
+        },
+        "data_description": {
+          "enable_off_grid_output_power": "Zum Testen auf diesem Modell. Messwerte können fehlen oder ungenau sein."
         }
       }
     }

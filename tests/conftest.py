@@ -9,11 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from modbus_connection import ModbusUnit
 
-from custom_components.anker_solix_extras.const import (
-    DOMAIN,
-    OFFICIAL_DOMAIN,
-    SOLARBANK_4_E5000_PRO,
-)
+from custom_components.anker_solix_extras.const import DOMAIN, OFFICIAL_DOMAIN
 from custom_components.anker_solix_extras.models import BatteryPower
 
 from .ha import (
@@ -64,7 +60,7 @@ async def official_entry(hass: HomeAssistant) -> MockConfigEntry:
         config_entry_id=entry.entry_id,
         identifiers={(OFFICIAL_DOMAIN, entry.entry_id)},
         manufacturer="Anker",
-        model=SOLARBANK_4_E5000_PRO,
+        model="Anker SOLIX Solarbank 4 E5000 Pro",
         name="Test Solarbank",
     )
     await hass.async_block_till_done()
