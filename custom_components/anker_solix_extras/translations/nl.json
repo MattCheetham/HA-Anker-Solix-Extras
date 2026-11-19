@@ -66,10 +66,14 @@
   "options": {
     "step": {
       "init": {
-        "title": "Pollinginstellingen",
+        "title": "Integratie-instellingen",
         "description": "Kies hoe vaak Extras de batterij via Modbus uitleest. Voer een geheel aantal seconden in, minimaal 1. De standaardwaarde is 60 seconden.",
         "data": {
-          "scan_interval": "Pollinginterval (seconden)"
+          "scan_interval": "Pollinginterval (seconden)",
+          "enable_off_grid_output_power": "Uitgangsvermogen buiten het net inschakelen (bèta)"
+        },
+        "data_description": {
+          "enable_off_grid_output_power": "Om deze functie op dit model te testen. Metingen kunnen ontbreken of onnauwkeurig zijn."
         }
       }
     }

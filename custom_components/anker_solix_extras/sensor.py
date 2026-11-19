@@ -74,7 +74,7 @@ async def async_setup_entry(
         AnkerSolixBatteryStateOfHealth(coordinator),
         AnkerSolixPlantStatus(coordinator),
     ]
-    if coordinator.supports_off_grid_output_power:
+    if coordinator.off_grid_output_power_enabled:
         entities.append(AnkerSolixOffGridOutputPower(coordinator))
     async_add_entities(entities)
 

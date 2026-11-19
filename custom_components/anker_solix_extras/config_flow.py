@@ -17,10 +17,12 @@ from homeassistant.helpers import selector
 
 from .client import AnkerSolixExtrasClient, TemperatureReadError
 from .const import (
+    CONF_ENABLE_OFF_GRID_OUTPUT_POWER,
     CONF_OFFICIAL_ENTRY_ID,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MODBUS_DEVICE_ID,
+    SOLARBANK_4_E5000_PRO,
 )
 from .source import async_get_batteries, async_get_battery
 
@@ -46,7 +48,7 @@ class AnkerSolixExtrasConfigFlow(ConfigFlow, domain=DOMAIN):
     def async_get_options_flow(
         config_entry: ConfigEntry,
     ) -> AnkerSolixExtrasOptionsFlow:
-        """Allow polling changes without recreating the integration entry."""
+        """Allow settings changes without recreating the integration entry."""
         return AnkerSolixExtrasOptionsFlow()
 
     async def async_step_user(
@@ -107,20 +109,27 @@ class AnkerSolixExtrasConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class AnkerSolixExtrasOptionsFlow(OptionsFlowWithReload):
-    """Change Extras polling and reload only this integration."""
+    """Change Extras settings and reload only this integration."""
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Edit the interval, prefilling the saved value or the default."""
+        """Edit the polling interval and available experimental features."""
+        options = self.config_entry.options
         if user_input is not None:
-            return self.async_create_entry(
-                data={**self.config_entry.options, **user_input}
-            )
+            return self.async_create_entry(data={**options, **user_input})
 
-        return self.async_show_form(
-            step_id="init",
-            data_schema=_polling_schema(
-                self.config_entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-            ),
+        schema = _polling_schema(options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
+        battery = async_get_battery(
+            self.hass, self.config_entry.data[CONF_OFFICIAL_ENTRY_ID]
         )
+        if battery is not None and battery.device.model != SOLARBANK_4_E5000_PRO:
+            schema = schema.extend(
+                {
+                    vol.Optional(
+                        CONF_ENABLE_OFF_GRID_OUTPUT_POWER,
+                        default=options.get(CONF_ENABLE_OFF_GRID_OUTPUT_POWER, False),
+                    ): selector.BooleanSelector()
+                }
+            )
+        return self.async_show_form(step_id="init", data_schema=schema)
