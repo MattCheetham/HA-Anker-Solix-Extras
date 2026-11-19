@@ -50,38 +50,37 @@ Smart plugs and meters are not supported.
 
 ## Installation
 
-### Marketplace / HACS custom repository
+### Install with Marketplace (recommended)
 
-1. Install and configure **Anker SOLIX Official** first.
-2. In **Marketplace / HACS**, open the menu and choose **Custom repositories**.
-3. Add `https://github.com/MattCheetham/HA-Anker-Solix-Extras` with type **Integration**.
-4. Find **Anker SOLIX Extras** and download it.
-5. Restart Home Assistant to load the new custom integration.
-6. Go to **Settings → Devices & services → Add integration**, search for
-   **Anker SOLIX Extras**, and select your existing official battery.
-7. Open your battery's existing device page. The additional entities appear
-   alongside those provided by the official integration.
+[![Open Anker SOLIX Extras in My Home Assistant.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=MattCheetham&repository=HA-Anker-Solix-Extras&category=Integration)
 
-Extras is installed through a custom repository. Keep the official integration
-installed and configured alongside it.
+Or, in **Settings → Marketplace**, search for `Anker SOLIX Extras` under
+**Integrations** and select **Install**. On Home Assistant 2026.10, search in
+**HACS** and select **Download**.
 
-### Manual installation
+1. Restart Home Assistant if prompted.
+2. If setup doesn't open automatically, go to **Settings → Devices & services**,
+   select **Add integration**, and search for **Anker SOLIX Extras**.
+3. Select the battery already configured in **Anker SOLIX Official**. The new
+   entities appear on your battery's existing device page.
 
-Copy `custom_components/anker_solix_extras` from this repository into your Home
-Assistant configuration directory's `custom_components` folder. The result is:
+Marketplace and HACS track updates automatically.
 
-```text
-config/
-  custom_components/
-    anker_solix_official/  # existing official integration
-    anker_solix_extras/    # this integration
-      __init__.py
-      manifest.json
-      ...
-```
+### Manual Installation
 
-Restart Home Assistant and follow setup steps 6–7 above. Do not nest the Extras
-folder inside the official integration's folder.
+<details>
+<summary>More Details</summary>
+
+- Download `anker_solix_extras.zip` from the latest [published release](https://github.com/MattCheetham/HA-Anker-Solix-Extras/releases/latest).
+- Extract the `anker_solix_extras` folder into your Home Assistant configuration
+  directory's `custom_components` folder. The resulting path is
+  `<config directory>/custom_components/anker_solix_extras/`.
+- Restart Home Assistant.
+- Go to **Settings → Devices & services**, select **Add integration**, and search
+  for **Anker SOLIX Extras**. Select the battery already configured in
+  **Anker SOLIX Official**.
+
+</details>
 
 ## Using the additional sensors
 
