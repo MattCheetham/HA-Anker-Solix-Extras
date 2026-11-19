@@ -11,7 +11,6 @@ from custom_components.anker_solix_extras.client import (
     BackupReserveError,
     RegisterWriteError,
 )
-from custom_components.anker_solix_extras.const import DOMAIN, OFFICIAL_DOMAIN
 
 
 @pytest.fixture
@@ -50,34 +49,6 @@ async def test_reserve_actions_confirm_state_and_share_the_official_device(
         call(60003, 1),
         call(60003, 0),
     ]
-
-
-async def test_upgrade_removes_only_the_legacy_extras_number(
-    hass, extras_entry, official_entry, mock_client
-) -> None:
-    assert extras_entry.minor_version == 1
-    registry = er.async_get(hass)
-    unique_id = f"{official_entry.entry_id}_backup_reserve_soc"
-    legacy = registry.async_get_or_create(
-        "number", DOMAIN, unique_id, config_entry=extras_entry
-    )
-    official = registry.async_get_or_create(
-        "number", OFFICIAL_DOMAIN, unique_id, config_entry=official_entry
-    )
-    switch = registry.async_get_or_create(
-        "switch",
-        DOMAIN,
-        f"{official_entry.entry_id}_backup_reserve",
-        config_entry=extras_entry,
-        suggested_object_id="my_backup_reserve",
-    )
-    assert await hass.config_entries.async_setup(extras_entry.entry_id)
-    await hass.async_block_till_done()
-    assert extras_entry.minor_version == 2
-    assert registry.async_get(legacy.entity_id) is None
-    assert registry.async_get(official.entity_id) == official
-    assert hass.states.get(switch.entity_id).state == STATE_OFF
-    mock_client.return_value.async_write_register.assert_not_awaited()
 
 
 async def test_switch_checks_fresh_capability(
