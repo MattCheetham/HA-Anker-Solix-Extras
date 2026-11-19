@@ -18,7 +18,7 @@ This is an independent community project, not developed or supported by Anker.
 | Plant Status | Operating status reported by the battery system | 1 = On-grid / 2 = Off-grid / 3 = Standby / 4 = Fault | Input register 10000, UINT16 |
 | Battery Heating Power | Estimated from battery and AC power during AC absorption; may include conversion losses or other consumption | W, whole watts by default | Calculated |
 | Battery Heating Active | On when estimated heating power is greater than zero; shares the estimate's limitations | On / off | Calculated |
-| Backup Reserve Enable | A switch to turn on the Battery Reserve function | 0 = disabled / 1 = enabled | On / off | Holding register 60003, UINT16 |
+| Backup Reserve Enable | A switch to turn on the Battery Reserve function | 0 = disabled / 1 = enabled | Holding register 60003, UINT16 |
 
 ## Important
 
