@@ -153,4 +153,6 @@ guidance. All changes go through review before merging into `main`.
 
 ## Licence
 
-[MIT](LICENSE). The battery-plus icon is original project artwork.
+[MIT](LICENSE). The icon and wordmark adapt artwork from the
+[official Anker SOLIX integration](https://github.com/anker-charging/ha-anker-solix-official/tree/main/custom_components/anker_solix_official/brand).
+See the [upstream artwork license](custom_components/anker_solix_extras/brand/LICENSE).
