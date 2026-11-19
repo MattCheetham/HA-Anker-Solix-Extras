@@ -216,5 +216,5 @@ class AnkerSolixOffGridOutputPower(
 
     @property
     def native_value(self) -> int | None:
-        """Return the reading as received, including any off-state value."""
+        """Return the reported active power in watts."""
         return self.coordinator.data.off_grid_output_power if self.available else None

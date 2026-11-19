@@ -82,11 +82,10 @@ class AnkerSolixExtrasClient:
             raise PowerReadError("Unable to read battery power") from err
         if not _valid_words(registers, 4):
             raise PowerReadError("Invalid power response")
-        values = []
-        for offset in (0, 2):
-            raw = (registers[offset] << 16) | registers[offset + 1]
-            values.append(raw - 0x100000000 if raw & 0x80000000 else raw)
-        return plant_status, BatteryPower(ac_power=values[0], battery_power=values[1])
+        return plant_status, BatteryPower(
+            ac_power=_decode_int32(registers[0], registers[1]),
+            battery_power=_decode_int32(registers[2], registers[3]),
+        )
 
     async def async_read_state_of_health(self) -> int:
         """Read the battery system's state of health as a whole percentage."""
@@ -101,18 +100,18 @@ class AnkerSolixExtrasClient:
         return registers[0]
 
     async def async_read_off_grid_output_power(self) -> int:
-        """Read the raw value from the experimental off-grid output register."""
+        """Read experimental off-grid active power as a signed 32-bit watt value."""
         try:
             registers = await self._unit.read_input_registers(
-                OFF_GRID_OUTPUT_POWER_ADDRESS, 1
+                OFF_GRID_OUTPUT_POWER_ADDRESS, 2
             )
         except (ModbusError, OSError) as err:
             raise OffGridOutputPowerReadError(
                 "Unable to read off-grid output power"
             ) from err
-        if not _valid_words(registers, 1):
+        if not _valid_words(registers, 2):
             raise OffGridOutputPowerReadError("Invalid off-grid output power response")
-        return registers[0]
+        return _decode_int32(registers[0], registers[1])
 
     async def async_read_backup_reserve(self) -> bool | None:
         """Read the reserve switch state if the battery advertises it."""
@@ -153,3 +152,9 @@ def _valid_words(registers: list[int], count: int) -> bool:
         and len(registers) == count
         and all(type(word) is int and 0 <= word <= 0xFFFF for word in registers)
     )
+
+
+def _decode_int32(high_word: int, low_word: int) -> int:
+    """Decode a signed 32-bit value in high-word-first register order."""
+    raw = (high_word << 16) | low_word
+    return raw - 0x100000000 if raw & 0x80000000 else raw
