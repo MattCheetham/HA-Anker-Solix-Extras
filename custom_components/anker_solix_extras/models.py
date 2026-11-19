@@ -27,3 +27,4 @@ class BatteryMeasurements:
     state_of_health: int | None
     plant_status: str | None
     backup_reserve: bool | None = None
+    off_grid_output_power: int | None = None

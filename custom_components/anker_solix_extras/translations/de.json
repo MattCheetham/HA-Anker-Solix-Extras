@@ -39,6 +39,9 @@
       },
       "battery_heating_power": {
         "name": "Akkuheizleistung"
+      },
+      "off_grid_output_power": {
+        "name": "Inselbetrieb-Ausgangsleistung"
       }
     },
     "switch": {

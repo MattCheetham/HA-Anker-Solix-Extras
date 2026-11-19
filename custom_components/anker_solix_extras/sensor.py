@@ -43,6 +43,16 @@ BATTERY_STATE_OF_HEALTH = SensorEntityDescription(
 )
 
 
+OFF_GRID_OUTPUT_POWER = SensorEntityDescription(
+    key="off_grid_output_power",
+    translation_key="off_grid_output_power",
+    device_class=SensorDeviceClass.POWER,
+    state_class=SensorStateClass.MEASUREMENT,
+    native_unit_of_measurement=UnitOfPower.WATT,
+    suggested_display_precision=0,
+)
+
+
 PLANT_STATUS = SensorEntityDescription(
     key="plant_status",
     translation_key="plant_status",
@@ -57,14 +67,16 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Add additional measurement entities."""
-    async_add_entities(
-        [
-            AnkerSolixBatteryTemperature(entry.runtime_data),
-            AnkerSolixBatteryHeatingPower(entry.runtime_data),
-            AnkerSolixBatteryStateOfHealth(entry.runtime_data),
-            AnkerSolixPlantStatus(entry.runtime_data),
-        ]
-    )
+    coordinator = entry.runtime_data
+    entities: list[SensorEntity] = [
+        AnkerSolixBatteryTemperature(coordinator),
+        AnkerSolixBatteryHeatingPower(coordinator),
+        AnkerSolixBatteryStateOfHealth(coordinator),
+        AnkerSolixPlantStatus(coordinator),
+    ]
+    if coordinator.supports_off_grid_output_power:
+        entities.append(AnkerSolixOffGridOutputPower(coordinator))
+    async_add_entities(entities)
 
 
 class AnkerSolixBatteryTemperature(
@@ -178,3 +190,31 @@ class AnkerSolixPlantStatus(
     def native_value(self) -> str | None:
         """Return the current operating status."""
         return self.coordinator.data.plant_status if self.available else None
+
+
+class AnkerSolixOffGridOutputPower(
+    CoordinatorEntity[AnkerSolixExtrasCoordinator], SensorEntity
+):
+    """Expose the experimental output reading on the official battery device."""
+
+    _attr_has_entity_name = True
+    entity_description = OFF_GRID_OUTPUT_POWER
+
+    def __init__(self, coordinator: AnkerSolixExtrasCoordinator) -> None:
+        """Attach to the existing official device."""
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.official_entry_id}_off_grid_output_power"
+        self.device_entry = coordinator.device
+
+    @property
+    def available(self) -> bool:
+        """Require a fresh off-grid output reading."""
+        return (
+            super().available
+            and self.coordinator.data.off_grid_output_power is not None
+        )
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the reading as received, including any off-state value."""
+        return self.coordinator.data.off_grid_output_power if self.available else None

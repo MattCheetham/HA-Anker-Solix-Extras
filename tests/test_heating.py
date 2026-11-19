@@ -15,7 +15,11 @@ from custom_components.anker_solix_extras.client import (
     StateOfHealthReadError,
     TemperatureReadError,
 )
-from custom_components.anker_solix_extras.const import DOMAIN, SUPPORTED_MODELS
+from custom_components.anker_solix_extras.const import (
+    DOMAIN,
+    SOLARBANK_4_E5000_PRO,
+    SUPPORTED_MODELS,
+)
 from custom_components.anker_solix_extras.models import BatteryPower
 from custom_components.anker_solix_extras.sensor import AnkerSolixBatteryHeatingPower
 
@@ -59,7 +63,7 @@ async def test_extras_entities_share_official_device(
     assert await hass.config_entries.async_setup(extras_entry.entry_id)
     await hass.async_block_till_done()
     entities = get_entities(hass, extras_entry)
-    assert set(entities) == {
+    expected = {
         "battery_temperature",
         "battery_heating_power",
         "battery_heating_active",
@@ -67,6 +71,13 @@ async def test_extras_entities_share_official_device(
         "plant_status",
         "backup_reserve",
     }
+    off_grid_read = mock_client.return_value.async_read_off_grid_output_power
+    if model == SOLARBANK_4_E5000_PRO:
+        expected.add("off_grid_output_power")
+        off_grid_read.assert_awaited_once()
+    else:
+        off_grid_read.assert_not_awaited()
+    assert set(entities) == expected
     for key, entity in entities.items():
         assert entity.device_id == device.id
         assert entity.platform == DOMAIN
@@ -122,7 +133,7 @@ async def test_plant_status_updates_from_input_register(
             if code is None:
                 raise ModbusTimeoutError("timeout")
             return [code, 0, 0, 0, 0, 0, 0xFFFF, 0xF66E, 0xFFFF, 0xF75E]
-        return {10156: [250], 10015: [100], 32775: [0]}[address]
+        return {10156: [250], 10015: [100], 10230: [22], 32775: [0]}[address]
 
     unit.read_input_registers.side_effect = read_input_registers
     assert await hass.config_entries.async_setup(extras_entry.entry_id)
@@ -255,7 +266,7 @@ async def test_setup_with_one_measurement_unavailable(
     assert await hass.config_entries.async_setup(extras_entry.entry_id)
     await hass.async_block_till_done()
     entities = get_entities(hass, extras_entry)
-    assert len(entities) == 6
+    assert len(entities) == 7
     assert extras_entry.state is ConfigEntryState.LOADED
     assert hass.states.get(entities["battery_temperature"].entity_id).state == (
         STATE_UNAVAILABLE if failed == "temperature" else "25.0"
@@ -333,7 +344,7 @@ async def test_upgrade_preserves_existing_temperature_entity(
     entities = get_entities(hass, extras_entry)
     assert entities["battery_temperature"].entity_id == original.entity_id
     assert entities["battery_temperature"].name == "My temperature"
-    assert len(entities) == 6
+    assert len(entities) == 7
 
 
 async def test_sources_update_when_estimate_is_unchanged(
