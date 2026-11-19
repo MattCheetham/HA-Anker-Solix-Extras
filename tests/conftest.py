@@ -98,7 +98,7 @@ def mock_client(mock_connection) -> Generator[MagicMock]:
             return_value=("on_grid", BatteryPower(-2450, -2210))
         )
         client.async_read_state_of_health = AsyncMock(return_value=100)
-        client.async_read_off_grid_output_power = AsyncMock(return_value=22)
+        client.async_read_off_grid_output_power = AsyncMock(return_value=23)
         client.async_read_backup_reserve = AsyncMock(return_value=False)
         yield factory
 

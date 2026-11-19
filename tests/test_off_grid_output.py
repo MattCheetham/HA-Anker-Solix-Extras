@@ -8,13 +8,13 @@ from modbus_connection import ModbusTimeoutError
 async def test_off_grid_output_power_states(
     hass, extras_entry, mock_connection
 ) -> None:
-    """Display raw FC04 samples and recover independently from invalid reads."""
+    """Decode a signed FC04 register pair and recover from invalid reads."""
     unit = mock_connection.return_value.for_unit.return_value
     reading = []
 
     async def read_input_registers(address, count):
-        if address == 10230:
-            assert count == 1
+        if address == 10233:
+            assert count == 2
             if reading is None:
                 raise ModbusTimeoutError("timeout")
             return reading
@@ -39,12 +39,16 @@ async def test_off_grid_output_power_states(
     assert hass.states.get(power_id).state == STATE_UNAVAILABLE
 
     for sample, expected in [
-        ([22], "22"),
-        ([8], "8"),
-        ([0], "0"),
-        ([], STATE_UNAVAILABLE),
+        ([0, 1], "1"),
+        ([0, 23], "23"),
+        ([0, 52], "52"),
+        ([0, 0], "0"),
+        ([0xFFFF, 0xFFFE], "-2"),
+        ([1, 0], "65536"),
+        ([0], STATE_UNAVAILABLE),
+        ([0, 0x10000], STATE_UNAVAILABLE),
         (None, STATE_UNAVAILABLE),
-        ([20], "20"),
+        ([0, 2], "2"),
     ]:
         reading = sample
         await extras_entry.runtime_data.async_refresh()

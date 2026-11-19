@@ -133,7 +133,7 @@ async def test_plant_status_updates_from_input_register(
             if code is None:
                 raise ModbusTimeoutError("timeout")
             return [code, 0, 0, 0, 0, 0, 0xFFFF, 0xF66E, 0xFFFF, 0xF75E]
-        return {10156: [250], 10015: [100], 10230: [22], 32775: [0]}[address]
+        return {10156: [250], 10015: [100], 10233: [0, 23], 32775: [0]}[address]
 
     unit.read_input_registers.side_effect = read_input_registers
     assert await hass.config_entries.async_setup(extras_entry.entry_id)
