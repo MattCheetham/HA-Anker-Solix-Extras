@@ -9,23 +9,16 @@ continue to work as before.
 
 This is an independent community project, not developed or supported by Anker.
 
-## Sensors
+## Sensors & Inputs
 
-| Sensor | Source | Display |
-| --- | --- | --- |
-| Battery Temperature | Input register 10156, unit ID 1, signed INT16 divided by 10 | °C, whole degrees by default |
-| Battery SOH | Combined state of health reported by the battery system | % |
-| Plant Status | Operating status reported by the battery system | On-grid / Off-grid / Standby / Fault |
-| Battery Heating Power | Estimated from battery and AC power during AC absorption; may include conversion losses or other consumption | W, whole watts by default |
-| Battery Heating Active | On when estimated heating power is greater than zero; shares the estimate's limitations | On / off |
-
-## Backup reserve switch
-
-On your battery's device page, use the Extras **Backup Reserve** switch to turn
-reserve on or off. Set the percentage using the control from **Anker SOLIX
-Official** while reserve is on. The switch requires the battery to advertise
-support and its register was write-tested on a Solarbank 4 E5000 Pro with
-firmware 1.0.3.37.
+| Sensor | Description | Display | Source |
+| --- | --- | --- | --- |
+| Battery Temperature | The internal battery temperature, averaged across installed units | °C, whole degrees by default | Input register 10156, INT16 |
+| Battery SOH | Combined state of health reported by the battery system | % | Input register 10015, UINT16 |
+| Plant Status | Operating status reported by the battery system | 1 = On-grid / 2 = Off-grid / 3 = Standby / 4 = Fault | Input register 10000, UINT16 |
+| Battery Heating Power | Estimated from battery and AC power during AC absorption; may include conversion losses or other consumption | W, whole watts by default | Calculated |
+| Battery Heating Active | On when estimated heating power is greater than zero; shares the estimate's limitations | On / off | Calculated |
+| Backup Reserve Enable | A switch to turn on the Battery Reserve function | 0 = disabled / 1 = enabled | On / off | Holding register 60003, UINT16 |
 
 ## Important
 
@@ -44,15 +37,14 @@ no responsibility for damage to your device or other loss resulting from its use
 
 These are the models offered during setup:
 
-| Model | Temperature validation |
+| Model | Compatibility |
 | --- | --- |
-| Solarbank 4 E5000 Pro | Tested successfully with Extras |
-| Solarbank Max AC | Independently reported in [upstream issue #58](https://github.com/anker-charging/ha-anker-solix-official/issues/58) |
+| Solarbank 4 E5000 Pro | Fully compatible |
+| Solarbank Max AC | Inferred from the official integration's shared register map |
 | Solarbank Max | Inferred from the official integration's shared register map |
 | XE / XE AC | Inferred from the official integration's shared register map |
 
-Heating compatibility is inferred from the shared power register definitions for
-these models and has not yet been hardware-validated.
+If you own a model I have not yet marked as confirmed compatible, you can open a discussion to confirm compatibility or open a pull request to update this documentation.
 
 Smart plugs and meters are not supported.
 
@@ -108,7 +100,7 @@ Anker SOLIX Official entry. See the [Home Assistant Modbus documentation](https:
 
 ## Polling interval
 
-Extras reads its sensors and backup reserve switch state every **60 seconds** by
+Extras reads state from your battery every **60 seconds** by
 default. Choose a custom interval during setup, or change it later under
 **Settings → Devices & services
 → Anker SOLIX Extras → Configure**. Enter a whole number of seconds, at least 1.
@@ -150,6 +142,8 @@ delete either to remove Extras.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development, testing, and pull request
 guidance. All changes go through review before merging into `main`.
+
+AI was used extensively while building this project. Similar AI driven contributions are welcome but please use your best judgement. Submitted code must have a thorough test suite and will be reviewed before merging.
 
 ## Licence
 
