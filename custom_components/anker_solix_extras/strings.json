@@ -22,6 +22,15 @@
   },
   "entity": {
     "sensor": {
+      "plant_status": {
+        "name": "Plant Status",
+        "state": {
+          "on_grid": "On-grid",
+          "off_grid": "Off-grid",
+          "standby": "Standby",
+          "fault": "Fault"
+        }
+      },
       "battery_temperature": {
         "name": "Battery Temperature"
       },

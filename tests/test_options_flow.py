@@ -90,13 +90,13 @@ async def test_options_reload_extras_and_preserve_entities(
     # Observe the new timer twice, before the old 60-second timer could fire.
     client = mock_client.return_value
     client.async_read_temperature.reset_mock()
-    client.async_read_power.reset_mock()
+    client.async_read_status_and_power.reset_mock()
     for expected in (1, 2):
         freezer.tick(timedelta(seconds=16))
         async_fire_time_changed(hass, dt_util.utcnow())
         await hass.async_block_till_done()
         assert client.async_read_temperature.await_count == expected
-        assert client.async_read_power.await_count == expected
+        assert client.async_read_status_and_power.await_count == expected
 
 
 async def test_options_preserve_other_settings(hass, extras_entry, mock_client) -> None:

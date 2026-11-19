@@ -1,6 +1,6 @@
 """Tests for Modbus register access and measurement decoding."""
 
-from unittest.mock import create_autospec
+from unittest.mock import call, create_autospec
 
 import pytest
 from modbus_connection import (
@@ -92,12 +92,13 @@ async def test_invalid_state_of_health(unit, registers) -> None:
     ],
 )
 async def test_read_power_in_one_request(unit, registers, ac, battery) -> None:
-    """Decode both signed powers from one four-register snapshot, high word first."""
-    unit.read_input_registers.return_value = registers
-    power = await AnkerSolixExtrasClient(unit).async_read_power()
+    """Decode plant status and signed powers from one input-register snapshot."""
+    unit.read_input_registers.return_value = [1, 0, 0, 0, 0, 0, *registers]
+    status, power = await AnkerSolixExtrasClient(unit).async_read_status_and_power()
+    assert status == "on_grid"
     assert power.ac_power == ac
     assert power.battery_power == battery
-    unit.read_input_registers.assert_awaited_once_with(10006, 4)
+    unit.read_input_registers.assert_awaited_once_with(10000, 10)
     unit.write_register.assert_not_called()
     unit.write_registers.assert_not_called()
 
@@ -119,27 +120,44 @@ async def test_read_power_in_one_request(unit, registers, ac, battery) -> None:
     ],
 )
 async def test_invalid_power_response_is_not_zero(unit, registers) -> None:
-    unit.read_input_registers.return_value = registers
+    unit.read_input_registers.return_value = (
+        [1, 0, 0, 0, 0, 0, *registers] if registers is not None else None
+    )
     with pytest.raises(PowerReadError):
-        await AnkerSolixExtrasClient(unit).async_read_power()
+        await AnkerSolixExtrasClient(unit).async_read_status_and_power()
 
 
 async def test_power_read_after_temperature_rejection(unit) -> None:
     """A rejected temperature register does not prevent a fresh power read."""
     unit.read_input_registers.side_effect = [
         IllegalDataAddressError("not supported"),
-        [0, 0, 0, 0],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ]
     client = AnkerSolixExtrasClient(unit)
     with pytest.raises(TemperatureReadError):
         await client.async_read_temperature()
-    assert (await client.async_read_power()).heating_power == 0
+    _, power = await client.async_read_status_and_power()
+    assert power.heating_power == 0
+
+
+async def test_power_falls_back_when_the_wider_range_is_rejected(unit) -> None:
+    unit.read_input_registers.side_effect = [
+        IllegalDataAddressError("not supported"),
+        [0xFFFF, 0xF66E, 0xFFFF, 0xF75E],
+    ]
+    status, power = await AnkerSolixExtrasClient(unit).async_read_status_and_power()
+    assert status is None
+    assert power.heating_power == 240
+    assert unit.read_input_registers.await_args_list == [
+        call(10000, 10),
+        call(10006, 4),
+    ]
 
 
 @pytest.mark.parametrize(
     ("method", "error"),
     [
-        ("async_read_power", PowerReadError),
+        ("async_read_status_and_power", PowerReadError),
         ("async_read_state_of_health", StateOfHealthReadError),
         ("async_read_backup_reserve", BackupReserveError),
     ],

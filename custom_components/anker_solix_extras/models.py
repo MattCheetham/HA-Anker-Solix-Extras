@@ -34,4 +34,5 @@ class BatteryMeasurements:
     temperature: float | None
     power: BatteryPower | None
     state_of_health: int | None
+    plant_status: str | None
     backup_reserve: BackupReserve | None = None
