@@ -10,7 +10,7 @@ from homeassistant.helpers import device_registry as dr
 from modbus_connection import ModbusUnit
 
 from custom_components.anker_solix_extras.const import DOMAIN, OFFICIAL_DOMAIN
-from custom_components.anker_solix_extras.models import BackupReserve, BatteryPower
+from custom_components.anker_solix_extras.models import BatteryPower
 
 from .ha import (
     CORE_TEST_PLUGIN,
@@ -94,11 +94,7 @@ def mock_client(mock_connection) -> Generator[MagicMock]:
             return_value=("on_grid", BatteryPower(-2450, -2210))
         )
         client.async_read_state_of_health = AsyncMock(return_value=100)
-        client.async_read_backup_reserve = AsyncMock(
-            return_value=BackupReserve(
-                enabled=False, switch_supported=True, percentage=7
-            )
-        )
+        client.async_read_backup_reserve = AsyncMock(return_value=False)
         yield factory
 
 

@@ -19,15 +19,6 @@ class BatteryPower:
 
 
 @dataclass(frozen=True)
-class BackupReserve:
-    """The battery's reported reserve settings and supported controls."""
-
-    enabled: bool
-    switch_supported: bool
-    percentage: int | None
-
-
-@dataclass(frozen=True)
 class BatteryMeasurements:
     """Fresh readings; None means that measurement failed this update."""
 
@@ -35,4 +26,4 @@ class BatteryMeasurements:
     power: BatteryPower | None
     state_of_health: int | None
     plant_status: str | None
-    backup_reserve: BackupReserve | None = None
+    backup_reserve: bool | None = None

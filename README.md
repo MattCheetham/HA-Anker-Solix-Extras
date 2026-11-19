@@ -19,13 +19,13 @@ This is an independent community project, not developed or supported by Anker.
 | Battery Heating Power | Estimated from battery and AC power during AC absorption; may include conversion losses or other consumption | W, whole watts by default |
 | Battery Heating Active | On when estimated heating power is greater than zero; shares the estimate's limitations | On / off |
 
-## Backup reserve controls
+## Backup reserve switch
 
-On your battery's device page, turn on **Backup Reserve**, then set **Backup
-Reserve Percentage** to a whole percentage. The stored percentage remains
-visible when reserve is off. Each control requires its corresponding battery
-capability. The reserve registers were write-tested on a Solarbank 4 E5000 Pro
-with firmware 1.0.3.37.
+On your battery's device page, use the Extras **Backup Reserve** switch to turn
+reserve on or off. Set the percentage using the control from **Anker SOLIX
+Official** while reserve is on. The switch requires the battery to advertise
+support and its register was write-tested on a Solarbank 4 E5000 Pro with
+firmware 1.0.3.37.
 
 ## Important
 
@@ -108,7 +108,7 @@ Anker SOLIX Official entry. See the [Home Assistant Modbus documentation](https:
 
 ## Polling interval
 
-Extras reads its sensors and backup reserve settings every **60 seconds** by
+Extras reads its sensors and backup reserve switch state every **60 seconds** by
 default. Choose a custom interval during setup, or change it later under
 **Settings → Devices & services
 → Anker SOLIX Extras → Configure**. Enter a whole number of seconds, at least 1.

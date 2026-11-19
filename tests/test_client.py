@@ -18,7 +18,6 @@ from custom_components.anker_solix_extras.client import (
     StateOfHealthReadError,
     TemperatureReadError,
 )
-from custom_components.anker_solix_extras.models import BackupReserve
 
 
 @pytest.fixture
@@ -169,27 +168,27 @@ async def test_transport_error_is_reported_for_each_measurement(unit, method, er
 
 
 @pytest.mark.parametrize(
-    ("mask", "registers", "address", "expected"),
+    ("mask", "registers", "expected"),
     [
-        (15, [7, 1], 60002, BackupReserve(True, True, 7)),
-        (8, [0], 60003, BackupReserve(False, True, None)),
-        (4, [0, 1], 60002, BackupReserve(True, False, 0)),
-        (3, [], None, None),
+        (15, [1], True),
+        (8, [0], False),
+        (4, [], None),
+        (3, [], None),
     ],
 )
-async def test_read_backup_reserve(unit, mask, registers, address, expected) -> None:
+async def test_read_backup_reserve(unit, mask, registers, expected) -> None:
     unit.read_input_registers.return_value = [mask]
     unit.read_holding_registers.return_value = registers
     assert await AnkerSolixExtrasClient(unit).async_read_backup_reserve() == expected
     unit.read_input_registers.assert_awaited_once_with(32775, 1)
-    if address is None:
+    if expected is None:
         unit.read_holding_registers.assert_not_awaited()
     else:
-        unit.read_holding_registers.assert_awaited_once_with(address, len(registers))
+        unit.read_holding_registers.assert_awaited_once_with(60003, 1)
     unit.write_register.assert_not_awaited()
 
 
-@pytest.mark.parametrize("registers", [[], [50], [101, 1], [50, 2], [0, True]])
+@pytest.mark.parametrize("registers", [[], [2], [0, 1], [True], [-1]])
 async def test_invalid_backup_reserve_response(unit, registers) -> None:
     unit.read_input_registers.return_value = [15]
     unit.read_holding_registers.return_value = registers

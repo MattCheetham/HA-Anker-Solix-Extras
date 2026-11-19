@@ -66,7 +66,6 @@ async def test_extras_entities_share_official_device(
         "battery_state_of_health",
         "plant_status",
         "backup_reserve",
-        "backup_reserve_soc",
     }
     for key, entity in entities.items():
         assert entity.device_id == device.id
@@ -256,7 +255,7 @@ async def test_setup_with_one_measurement_unavailable(
     assert await hass.config_entries.async_setup(extras_entry.entry_id)
     await hass.async_block_till_done()
     entities = get_entities(hass, extras_entry)
-    assert len(entities) == 7
+    assert len(entities) == 6
     assert extras_entry.state is ConfigEntryState.LOADED
     assert hass.states.get(entities["battery_temperature"].entity_id).state == (
         STATE_UNAVAILABLE if failed == "temperature" else "25.0"
@@ -334,7 +333,7 @@ async def test_upgrade_preserves_existing_temperature_entity(
     entities = get_entities(hass, extras_entry)
     assert entities["battery_temperature"].entity_id == original.entity_id
     assert entities["battery_temperature"].name == "My temperature"
-    assert len(entities) == 7
+    assert len(entities) == 6
 
 
 async def test_sources_update_when_estimate_is_unchanged(

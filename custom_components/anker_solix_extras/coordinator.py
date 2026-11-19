@@ -1,4 +1,4 @@
-"""Coordinate measurements and backup reserve controls."""
+"""Coordinate measurements and the backup reserve switch."""
 
 import logging
 from asyncio import Lock
@@ -24,9 +24,8 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     RESERVE_ENABLE_ADDRESS,
-    RESERVE_PERCENTAGE_ADDRESS,
 )
-from .models import BackupReserve, BatteryMeasurements
+from .models import BatteryMeasurements
 from .source import OfficialBattery, async_get_battery
 
 _LOGGER = logging.getLogger(__name__)
@@ -117,47 +116,18 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
         )
 
     async def async_set_reserve_enabled(self, enabled: bool) -> None:
-        """Turn backup reserve on or off."""
-        await self._async_set_backup_reserve(enabled=enabled)
-
-    async def async_set_reserve_percentage(self, percentage: int) -> None:
-        """Set the backup reserve percentage while reserve is enabled."""
-        if type(percentage) is not int or not 0 <= percentage <= 100:
-            raise ValueError("Reserve percentage must be a whole number from 0 to 100")
-        await self._async_set_backup_reserve(percentage=percentage)
-
-    async def _async_set_backup_reserve(
-        self, *, enabled: bool | None = None, percentage: int | None = None
-    ) -> None:
-        """Check current capability and state, then write and confirm one setting."""
+        """Check the switch capability and state, then write and confirm."""
         async with self._io_lock:
             try:
                 self._check_linked_battery()
                 client = self._client
-                current = await client.async_read_backup_reserve()
-                if current is None or (
-                    not current.switch_supported
-                    if enabled is not None
-                    else current.percentage is None
-                ):
-                    self._publish_backup_reserve(current)
+                if await client.async_read_backup_reserve() is None:
+                    self._publish_backup_reserve(None)
                     raise ServiceValidationError(
                         translation_domain=DOMAIN, translation_key="reserve_unavailable"
                     )
-                if percentage is not None and not current.enabled:
-                    self._publish_backup_reserve(current)
-                    raise ServiceValidationError(
-                        translation_domain=DOMAIN, translation_key="reserve_disabled"
-                    )
                 self._check_linked_battery()
-                if enabled is not None:
-                    await client.async_write_register(
-                        RESERVE_ENABLE_ADDRESS, int(enabled)
-                    )
-                elif percentage is not None:
-                    await client.async_write_register(
-                        RESERVE_PERCENTAGE_ADDRESS, percentage
-                    )
+                await client.async_write_register(RESERVE_ENABLE_ADDRESS, int(enabled))
                 updated = await client.async_read_backup_reserve()
             except UpdateFailed as err:
                 self._publish_backup_reserve(None)
@@ -171,17 +141,13 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
                 ) from err
 
             self._publish_backup_reserve(updated)
-            if updated is None or (
-                (not updated.switch_supported or updated.enabled != enabled)
-                if enabled is not None
-                else updated.percentage != percentage
-            ):
+            if updated != enabled:
                 raise HomeAssistantError(
                     translation_domain=DOMAIN, translation_key="reserve_write_failed"
                 )
 
-    def _publish_backup_reserve(self, reserve: BackupReserve | None) -> None:
-        """Refresh the controls without reviving stale sensor readings."""
+    def _publish_backup_reserve(self, reserve: bool | None) -> None:
+        """Refresh the switch without reviving stale sensor readings."""
         if self.last_update_success:
             self.async_set_updated_data(replace(self.data, backup_reserve=reserve))
 

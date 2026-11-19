@@ -46,12 +46,7 @@ class AnkerSolixBackupReserveSwitch(
     @property
     def is_on(self) -> bool | None:
         """Return the battery's reported reserve enable flag."""
-        reserve = self.coordinator.data.backup_reserve
-        return (
-            reserve.enabled
-            if reserve is not None and reserve.switch_supported
-            else None
-        )
+        return self.coordinator.data.backup_reserve
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Enable backup reserve."""
