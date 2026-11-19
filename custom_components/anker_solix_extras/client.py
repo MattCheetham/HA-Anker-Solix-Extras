@@ -6,6 +6,7 @@ from .const import (
     AC_POWER_ADDRESS,
     BATTERY_SOH_ADDRESS,
     BATTERY_TEMPERATURE_ADDRESS,
+    OFF_GRID_OUTPUT_POWER_ADDRESS,
     PLANT_STATUS_ADDRESS,
     PLANT_STATUS_STATES,
     RESERVE_CAPABILITY_ADDRESS,
@@ -25,6 +26,10 @@ class PowerReadError(Exception):
 
 class StateOfHealthReadError(Exception):
     """A battery state of health reading could not be obtained."""
+
+
+class OffGridOutputPowerReadError(Exception):
+    """An off-grid output power reading could not be obtained."""
 
 
 class BackupReserveError(Exception):
@@ -93,6 +98,20 @@ class AnkerSolixExtrasClient:
             ) from err
         if not _valid_words(registers, 1) or registers[0] > 100:
             raise StateOfHealthReadError("Invalid SOH response")
+        return registers[0]
+
+    async def async_read_off_grid_output_power(self) -> int:
+        """Read the raw value from the experimental off-grid output register."""
+        try:
+            registers = await self._unit.read_input_registers(
+                OFF_GRID_OUTPUT_POWER_ADDRESS, 1
+            )
+        except (ModbusError, OSError) as err:
+            raise OffGridOutputPowerReadError(
+                "Unable to read off-grid output power"
+            ) from err
+        if not _valid_words(registers, 1):
+            raise OffGridOutputPowerReadError("Invalid off-grid output power response")
         return registers[0]
 
     async def async_read_backup_reserve(self) -> bool | None:

@@ -14,6 +14,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .client import (
     AnkerSolixExtrasClient,
     BackupReserveError,
+    OffGridOutputPowerReadError,
     PowerReadError,
     RegisterWriteError,
     StateOfHealthReadError,
@@ -24,6 +25,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     RESERVE_ENABLE_ADDRESS,
+    SOLARBANK_4_E5000_PRO,
 )
 from .models import BatteryMeasurements
 from .source import OfficialBattery, async_get_battery
@@ -54,6 +56,9 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
         )
         self.official_entry_id: str = entry.data[CONF_OFFICIAL_ENTRY_ID]
         self.device = battery.device
+        self.supports_off_grid_output_power = (
+            battery.device.model == SOLARBANK_4_E5000_PRO
+        )
         self._params = battery.modbus_params
         self._client = client
         self._io_lock = Lock()
@@ -85,6 +90,7 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
         power = None
         plant_status = None
         state_of_health = None
+        off_grid_output_power = None
         backup_reserve = None
         try:
             temperature = await client.async_read_temperature()
@@ -98,13 +104,24 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
             state_of_health = await client.async_read_state_of_health()
         except StateOfHealthReadError as err:
             _LOGGER.debug("State of health read failed: %s", err)
+        if self.supports_off_grid_output_power:
+            try:
+                off_grid_output_power = await client.async_read_off_grid_output_power()
+            except OffGridOutputPowerReadError as err:
+                _LOGGER.debug("Off-grid output power read failed: %s", err)
         try:
             backup_reserve = await client.async_read_backup_reserve()
         except BackupReserveError as err:
             _LOGGER.debug("Backup reserve read failed: %s", err)
         if all(
             reading is None
-            for reading in (temperature, power, state_of_health, backup_reserve)
+            for reading in (
+                temperature,
+                power,
+                state_of_health,
+                off_grid_output_power,
+                backup_reserve,
+            )
         ):
             raise UpdateFailed("Unable to read any battery measurements")
         return BatteryMeasurements(
@@ -113,6 +130,7 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
             plant_status=plant_status,
             state_of_health=state_of_health,
             backup_reserve=backup_reserve,
+            off_grid_output_power=off_grid_output_power,
         )
 
     async def async_set_reserve_enabled(self, enabled: bool) -> None:

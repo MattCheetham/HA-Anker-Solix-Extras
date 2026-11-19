@@ -39,6 +39,9 @@
       },
       "battery_heating_power": {
         "name": "Batterijverwarmingsvermogen"
+      },
+      "off_grid_output_power": {
+        "name": "Uitgangsvermogen buiten het net"
       }
     },
     "switch": {

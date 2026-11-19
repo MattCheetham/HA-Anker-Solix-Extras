@@ -39,6 +39,9 @@
       },
       "battery_heating_power": {
         "name": "Puissance de chauffage de la batterie"
+      },
+      "off_grid_output_power": {
+        "name": "Puissance de sortie hors réseau"
       }
     },
     "switch": {
