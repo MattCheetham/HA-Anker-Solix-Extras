@@ -21,7 +21,11 @@
   does not share a device across config entries in recent Home Assistant.
 - Removing/reloading Extras must never remove or update the official device.
   Handle the official entry being unavailable, disabled, removed, or reconfigured.
-- Heating is an experimental estimate: read signed INT32 AC/battery power from
+- Poll read-only Plant Status (UINT16 at input register 10000) with heating
+  power in one FC04 read of 10000–10009. On an illegal-address response, fall
+  back to 10006–10009 for heating. Unknown status codes leave Plant Status
+  unavailable.
+- Heating is an experimental estimate: decode signed INT32 AC/battery power from
   input registers 10006–10009 together, high word first. When AC is negative,
   use max(battery - AC, 0); otherwise zero. Activity is strictly estimate > 0.
 - Do not read or use load power for this estimate. Do not introduce a deadband,

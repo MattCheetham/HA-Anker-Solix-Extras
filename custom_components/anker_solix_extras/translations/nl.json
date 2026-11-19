@@ -22,6 +22,15 @@
   },
   "entity": {
     "sensor": {
+      "plant_status": {
+        "name": "Installatiestatus",
+        "state": {
+          "on_grid": "Netgekoppeld",
+          "off_grid": "Losgekoppeld van het net",
+          "standby": "Stand-by",
+          "fault": "Storing"
+        }
+      },
       "battery_temperature": {
         "name": "Batterijtemperatuur"
       },

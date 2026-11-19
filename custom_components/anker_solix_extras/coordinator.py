@@ -84,6 +84,7 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
         """Read independently available groups of battery values."""
         temperature = None
         power = None
+        plant_status = None
         state_of_health = None
         backup_reserve = None
         try:
@@ -91,9 +92,9 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
         except TemperatureReadError as err:
             _LOGGER.debug("Temperature read failed: %s", err)
         try:
-            power = await client.async_read_power()
+            plant_status, power = await client.async_read_status_and_power()
         except PowerReadError as err:
-            _LOGGER.debug("Power read failed: %s", err)
+            _LOGGER.debug("Plant status and power read failed: %s", err)
         try:
             state_of_health = await client.async_read_state_of_health()
         except StateOfHealthReadError as err:
@@ -110,6 +111,7 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
         return BatteryMeasurements(
             temperature=temperature,
             power=power,
+            plant_status=plant_status,
             state_of_health=state_of_health,
             backup_reserve=backup_reserve,
         )

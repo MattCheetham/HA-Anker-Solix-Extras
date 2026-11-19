@@ -28,7 +28,7 @@ def get_temperature(hass, extras_entry):
     entities = er.async_entries_for_config_entry(
         er.async_get(hass), extras_entry.entry_id
     )
-    assert len(entities) == 6
+    assert len(entities) == 7
     return next(
         entity
         for entity in entities
@@ -144,7 +144,9 @@ async def test_setup_failure_closes_extras_connection(
     mock_client.return_value.async_read_backup_reserve.side_effect = BackupReserveError(
         "offline"
     )
-    mock_client.return_value.async_read_power.side_effect = PowerReadError("offline")
+    mock_client.return_value.async_read_status_and_power.side_effect = PowerReadError(
+        "offline"
+    )
     mock_client.return_value.async_read_state_of_health.side_effect = (
         StateOfHealthReadError("offline")
     )

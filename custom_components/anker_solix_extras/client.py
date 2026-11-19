@@ -1,11 +1,13 @@
 """Modbus register access for Anker SOLIX Extras."""
 
-from modbus_connection import ModbusError, ModbusUnit
+from modbus_connection import IllegalDataAddressError, ModbusError, ModbusUnit
 
 from .const import (
     AC_POWER_ADDRESS,
     BATTERY_SOH_ADDRESS,
     BATTERY_TEMPERATURE_ADDRESS,
+    PLANT_STATUS_ADDRESS,
+    PLANT_STATUS_STATES,
     RESERVE_CAPABILITY_ADDRESS,
     RESERVE_ENABLE_ADDRESS,
     RESERVE_ENABLE_CAPABILITY,
@@ -55,10 +57,24 @@ class AnkerSolixExtrasClient:
         raw = registers[0]
         return (raw - 0x10000 if raw & 0x8000 else raw) / 10
 
-    async def async_read_power(self) -> BatteryPower:
-        """Read AC and battery power together as high-word-first signed INT32."""
+    async def async_read_status_and_power(self) -> tuple[str | None, BatteryPower]:
+        """Read plant status and the paired power values in one FC04 request."""
+        power_offset = AC_POWER_ADDRESS - PLANT_STATUS_ADDRESS
+        count = power_offset + 4
+        plant_status = None
         try:
-            registers = await self._unit.read_input_registers(AC_POWER_ADDRESS, 4)
+            try:
+                registers = await self._unit.read_input_registers(
+                    PLANT_STATUS_ADDRESS, count
+                )
+            except IllegalDataAddressError:
+                # Preserve heating on firmware that rejects the wider range.
+                registers = await self._unit.read_input_registers(AC_POWER_ADDRESS, 4)
+            else:
+                if not _valid_words(registers, count):
+                    raise PowerReadError("Invalid plant status and power response")
+                plant_status = PLANT_STATUS_STATES.get(registers[0])
+                registers = registers[power_offset:]
         except (ModbusError, OSError) as err:
             raise PowerReadError("Unable to read battery power") from err
         if not _valid_words(registers, 4):
@@ -67,7 +83,7 @@ class AnkerSolixExtrasClient:
         for offset in (0, 2):
             raw = (registers[offset] << 16) | registers[offset + 1]
             values.append(raw - 0x100000000 if raw & 0x80000000 else raw)
-        return BatteryPower(ac_power=values[0], battery_power=values[1])
+        return plant_status, BatteryPower(ac_power=values[0], battery_power=values[1])
 
     async def async_read_state_of_health(self) -> int:
         """Read the battery system's state of health as a whole percentage."""

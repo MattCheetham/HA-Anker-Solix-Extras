@@ -96,11 +96,25 @@ archive contains the `anker_solix_extras` folder ready to extract into Home
 Assistant's `custom_components` directory. Building it does not create a tag or
 publish a release.
 
+## Plant Status
+
+Anker defines input register 10000 as an unscaled, read-only UINT16. Codes 1,
+2, 3, and 4 mean On-grid, Off-grid, Standby, and Fault, respectively. Unrecognized
+codes leave the entity unavailable.
+[Anker Modbus guide](https://salesforce-knowledge-download.s3.us-west-2.amazonaws.com/000039871/en_US/000039871.pdf#page=8)
+
+A direct FC04 scan of a Solarbank 4 E5000 Pro with firmware 1.0.3.37 returned
+1 (On-grid).
+
+Extras polls 10000–10009 in one FC04 request for Plant Status and the heating
+estimate. If a device rejects the wider range with an illegal-address response,
+Extras retries the original heating range, 10006–10009.
+
 ## Heating estimate
 
 The heating entities are experimental estimates, not direct heater telemetry.
-Extras reads input registers 10006–10009 together (unit ID 1): AC power at 10006
-and battery power at 10008. Each is a high-word-first signed INT32 in watts,
+Extras decodes input registers 10006–10009 together at unit ID 1, with AC power at
+10006 and battery power at 10008. Each is a high-word-first signed INT32 in watts,
 matching the official integration's decoding. Negative values mean AC absorption
 and battery charging respectively. No load power registers are read or used.
 
@@ -155,8 +169,9 @@ defines input register 10015 as the combined SOH of all batteries in the system.
 Extras reads one unsigned 16-bit word at unit ID 1 and displays values from 0
 through 100 as whole percentages.
 
-Temperature, power and SOH are polled independently. A rejected or invalid SOH
-read makes SOH unavailable until a valid reading arrives. The coordinator reports
+Extras polls SOH independently of temperature and the shared Plant Status and
+power read. A rejected or invalid SOH read makes SOH unavailable until a valid
+reading arrives. The coordinator reports
 an update failure when no battery readings are available. Setup validation
 checks the temperature register, and existing configurations acquire SOH on
 reload.

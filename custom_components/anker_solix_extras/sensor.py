@@ -12,6 +12,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import AnkerSolixExtrasConfigEntry
+from .const import PLANT_STATUS_STATES
 from .coordinator import AnkerSolixExtrasCoordinator
 
 BATTERY_TEMPERATURE = SensorEntityDescription(
@@ -42,6 +43,14 @@ BATTERY_STATE_OF_HEALTH = SensorEntityDescription(
 )
 
 
+PLANT_STATUS = SensorEntityDescription(
+    key="plant_status",
+    translation_key="plant_status",
+    device_class=SensorDeviceClass.ENUM,
+    options=list(PLANT_STATUS_STATES.values()),
+)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: AnkerSolixExtrasConfigEntry,
@@ -53,6 +62,7 @@ async def async_setup_entry(
             AnkerSolixBatteryTemperature(entry.runtime_data),
             AnkerSolixBatteryHeatingPower(entry.runtime_data),
             AnkerSolixBatteryStateOfHealth(entry.runtime_data),
+            AnkerSolixPlantStatus(entry.runtime_data),
         ]
     )
 
@@ -143,3 +153,28 @@ class AnkerSolixBatteryStateOfHealth(
     def native_value(self) -> int | None:
         """Return the percentage reported by the battery system."""
         return self.coordinator.data.state_of_health if self.available else None
+
+
+class AnkerSolixPlantStatus(
+    CoordinatorEntity[AnkerSolixExtrasCoordinator], SensorEntity
+):
+    """Display the operating status reported by the plant."""
+
+    _attr_has_entity_name = True
+    entity_description = PLANT_STATUS
+
+    def __init__(self, coordinator: AnkerSolixExtrasCoordinator) -> None:
+        """Attach to the existing official device."""
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.official_entry_id}_plant_status"
+        self.device_entry = coordinator.device
+
+    @property
+    def available(self) -> bool:
+        """Require a recognized status from the current update."""
+        return super().available and self.coordinator.data.plant_status is not None
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the current operating status."""
+        return self.coordinator.data.plant_status if self.available else None
