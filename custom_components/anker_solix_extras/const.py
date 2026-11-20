@@ -3,6 +3,7 @@
 DOMAIN = "anker_solix_extras"
 OFFICIAL_DOMAIN = "anker_solix_official"
 CONF_ENABLE_OFF_GRID_OUTPUT_POWER = "enable_off_grid_output_power"
+CONF_ENABLE_PUBLISHED_REGISTERS = "enable_published_registers"
 CONF_OFFICIAL_ENTRY_ID = "official_entry_id"
 DEFAULT_SCAN_INTERVAL = 10
 BATTERY_TEMPERATURE_ADDRESS = 10156

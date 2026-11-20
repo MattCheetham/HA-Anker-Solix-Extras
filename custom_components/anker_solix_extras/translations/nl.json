@@ -116,10 +116,12 @@
         "description": "Kies hoe vaak Extras de batterij via Modbus uitleest. Voer een geheel aantal seconden in, minimaal 1. De standaardwaarde is 10 seconden.",
         "data": {
           "scan_interval": "Pollinginterval (seconden)",
-          "enable_off_grid_output_power": "Uitgangsvermogen buiten het net inschakelen (bèta)"
+          "enable_off_grid_output_power": "Uitgangsvermogen buiten het net inschakelen (bèta)",
+          "enable_published_registers": "Modbus-entiteiten van het systeem inschakelen (bÃ¨ta)"
         },
         "data_description": {
-          "enable_off_grid_output_power": "Om deze functie op dit model te testen. Metingen kunnen ontbreken of onnauwkeurig zijn."
+          "enable_off_grid_output_power": "Om deze functie op dit model te testen. Metingen kunnen ontbreken of onnauwkeurig zijn.",
+          "enable_published_registers": "Test energietotalen, aantallen PCS-eenheden, systeemtijd en terugleverbegrenzing op dit model. Registers kunnen ontbreken of anders werken."
         }
       }
     }

@@ -14,6 +14,7 @@ from modbus_connection import IllegalDataAddressError
 
 from custom_components.anker_solix_extras.const import (
     CONF_ENABLE_OFF_GRID_OUTPUT_POWER,
+    CONF_ENABLE_PUBLISHED_REGISTERS,
     CONF_OFFICIAL_ENTRY_ID,
     DOMAIN,
 )
@@ -31,7 +32,10 @@ async def test_options_show_saved_interval(hass, extras_entry, interval) -> None
     result = await hass.config_entries.options.async_init(extras_entry.entry_id)
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "init"
-    assert result["data_schema"]({}) == {CONF_SCAN_INTERVAL: interval or 10}
+    assert result["data_schema"]({}) == {
+        CONF_SCAN_INTERVAL: interval or 10,
+        CONF_ENABLE_PUBLISHED_REGISTERS: False,
+    }
 
 
 @pytest.mark.parametrize("invalid", [0, -1, "abc", None, 1.5])
@@ -82,7 +86,10 @@ async def test_options_reload_extras_and_preserve_entities(
     )
     await hass.async_block_till_done()
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert extras_entry.options == {CONF_SCAN_INTERVAL: 15}
+    assert extras_entry.options == {
+        CONF_SCAN_INTERVAL: 15,
+        CONF_ENABLE_PUBLISHED_REGISTERS: False,
+    }
     assert extras_entry.runtime_data is not old_coordinator
     assert extras_entry.runtime_data.update_interval == timedelta(seconds=15)
     assert official_entry.data == source_data
@@ -117,7 +124,11 @@ async def test_options_preserve_other_settings(hass, extras_entry, mock_client) 
     )
     await hass.async_block_till_done()
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert extras_entry.options == {"other_setting": True, CONF_SCAN_INTERVAL: 120}
+    assert extras_entry.options == {
+        "other_setting": True,
+        CONF_SCAN_INTERVAL: 120,
+        CONF_ENABLE_PUBLISHED_REGISTERS: False,
+    }
 
 
 async def test_options_enable_and_disable_off_grid_power_on_another_model(
@@ -152,6 +163,7 @@ async def test_options_enable_and_disable_off_grid_power_on_another_model(
 
     result = await hass.config_entries.options.async_init(extras_entry.entry_id)
     assert result["data_schema"]({})[CONF_ENABLE_OFF_GRID_OUTPUT_POWER] is False
+    assert CONF_ENABLE_PUBLISHED_REGISTERS not in result["data_schema"]({})
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
         {CONF_SCAN_INTERVAL: 60, CONF_ENABLE_OFF_GRID_OUTPUT_POWER: True},

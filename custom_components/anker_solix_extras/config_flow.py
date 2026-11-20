@@ -18,10 +18,12 @@ from homeassistant.helpers import selector
 from .client import AnkerSolixExtrasClient, TemperatureReadError
 from .const import (
     CONF_ENABLE_OFF_GRID_OUTPUT_POWER,
+    CONF_ENABLE_PUBLISHED_REGISTERS,
     CONF_OFFICIAL_ENTRY_ID,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MODBUS_DEVICE_ID,
+    PUBLISHED_REGISTER_MODELS,
     SOLARBANK_4_E5000_PRO,
 )
 from .source import async_get_batteries, async_get_battery
@@ -129,6 +131,18 @@ class AnkerSolixExtrasOptionsFlow(OptionsFlowWithReload):
                     vol.Optional(
                         CONF_ENABLE_OFF_GRID_OUTPUT_POWER,
                         default=options.get(CONF_ENABLE_OFF_GRID_OUTPUT_POWER, False),
+                    ): selector.BooleanSelector()
+                }
+            )
+        if (
+            battery is not None
+            and battery.device.model not in PUBLISHED_REGISTER_MODELS
+        ):
+            schema = schema.extend(
+                {
+                    vol.Optional(
+                        CONF_ENABLE_PUBLISHED_REGISTERS,
+                        default=options.get(CONF_ENABLE_PUBLISHED_REGISTERS, False),
                     ): selector.BooleanSelector()
                 }
             )

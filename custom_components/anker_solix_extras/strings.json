@@ -116,10 +116,12 @@
         "description": "Choose how often Extras reads the battery over Modbus. Enter a whole number of seconds, at least 1. The default is 10 seconds.",
         "data": {
           "scan_interval": "Polling interval (seconds)",
-          "enable_off_grid_output_power": "Enable Off-Grid Output Power (beta)"
+          "enable_off_grid_output_power": "Enable Off-Grid Output Power (beta)",
+          "enable_published_registers": "Enable Plant Modbus Entities (beta)"
         },
         "data_description": {
-          "enable_off_grid_output_power": "For testing on this model. Readings may be unavailable or inaccurate."
+          "enable_off_grid_output_power": "For testing on this model. Readings may be unavailable or inaccurate.",
+          "enable_published_registers": "Test plant energy totals, PCS counts, system time, and export limits on this model. Registers may be unavailable or behave differently."
         }
       }
     }
