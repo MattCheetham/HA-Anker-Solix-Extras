@@ -67,7 +67,7 @@
     "step": {
       "init": {
         "title": "Integratie-instellingen",
-        "description": "Kies hoe vaak Extras de batterij via Modbus uitleest. Voer een geheel aantal seconden in, minimaal 1. De standaardwaarde is 60 seconden.",
+        "description": "Kies hoe vaak Extras de batterij via Modbus uitleest. Voer een geheel aantal seconden in, minimaal 1. De standaardwaarde is 10 seconden.",
         "data": {
           "scan_interval": "Pollinginterval (seconden)",
           "enable_off_grid_output_power": "Uitgangsvermogen buiten het net inschakelen (bèta)"

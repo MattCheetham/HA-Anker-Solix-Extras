@@ -21,9 +21,9 @@ from custom_components.anker_solix_extras.const import (
 from .ha import async_fire_time_changed
 
 
-@pytest.mark.parametrize("interval", [None, 1, 15, 120, 86400])
+@pytest.mark.parametrize("interval", [None, 1, 15, 60, 120, 86400])
 async def test_options_show_saved_interval(hass, extras_entry, interval) -> None:
-    """Existing entries default to 60; configured entries show their saved value."""
+    """Existing entries default to 10; configured entries show their saved value."""
     if interval is not None:
         hass.config_entries.async_update_entry(
             extras_entry, options={CONF_SCAN_INTERVAL: interval}
@@ -31,7 +31,7 @@ async def test_options_show_saved_interval(hass, extras_entry, interval) -> None
     result = await hass.config_entries.options.async_init(extras_entry.entry_id)
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "init"
-    assert result["data_schema"]({}) == {CONF_SCAN_INTERVAL: interval or 60}
+    assert result["data_schema"]({}) == {CONF_SCAN_INTERVAL: interval or 10}
 
 
 @pytest.mark.parametrize("invalid", [0, -1, "abc", None, 1.5])
@@ -73,7 +73,7 @@ async def test_options_reload_extras_and_preserve_entities(
         )
     }
     old_coordinator = extras_entry.runtime_data
-    assert old_coordinator.update_interval == timedelta(seconds=60)
+    assert old_coordinator.update_interval == timedelta(seconds=10)
     source_data = dict(official_entry.data)
 
     result = await hass.config_entries.options.async_init(extras_entry.entry_id)
@@ -94,7 +94,7 @@ async def test_options_reload_extras_and_preserve_entities(
     } == before
     mock_connection.return_value.close.assert_awaited_once()
 
-    # Observe the new timer twice, before the old 60-second timer could fire.
+    # Observe two refreshes from the new timer without extra polls from the old one.
     client = mock_client.return_value
     client.async_read_temperature.reset_mock()
     client.async_read_status_and_power.reset_mock()
