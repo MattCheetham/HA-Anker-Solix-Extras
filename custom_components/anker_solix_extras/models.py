@@ -1,6 +1,6 @@
 """Immutable measurements shared by Extras entities."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)
@@ -28,3 +28,4 @@ class BatteryMeasurements:
     plant_status: str | None
     backup_reserve: bool | None = None
     off_grid_output_power: int | None = None
+    published_values: dict[int, int] = field(default_factory=dict)

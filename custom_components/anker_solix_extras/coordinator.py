@@ -1,9 +1,10 @@
-"""Coordinate measurements and the backup reserve switch."""
+"""Coordinate measurements and battery controls."""
 
 import logging
 from asyncio import Lock
 from dataclasses import replace
 from datetime import timedelta
+from time import monotonic, time
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_SCAN_INTERVAL
@@ -16,6 +17,7 @@ from .client import (
     BackupReserveError,
     OffGridOutputPowerReadError,
     PowerReadError,
+    RegisterReadError,
     RegisterWriteError,
     StateOfHealthReadError,
     TemperatureReadError,
@@ -25,13 +27,29 @@ from .const import (
     CONF_OFFICIAL_ENTRY_ID,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    ENERGY_ADDRESSES,
+    EXPORT_LIMIT_ADDRESS,
+    EXPORT_LIMIT_ENABLE_ADDRESS,
+    MAX_EXPORT_LIMIT,
+    PCS_COUNT_ADDRESSES,
+    PUBLISHED_REGISTER_MODELS,
     RESERVE_ENABLE_ADDRESS,
     SOLARBANK_4_E5000_PRO,
+    SYSTEM_TIME_ADDRESS,
 )
 from .models import BatteryMeasurements
 from .source import OfficialBattery, async_get_battery
 
 _LOGGER = logging.getLogger(__name__)
+
+_PUBLISHED_INPUTS = {address: 2 for address in ENERGY_ADDRESSES.values()} | {
+    address: 1 for address in PCS_COUNT_ADDRESSES.values()
+}
+_PUBLISHED_SETTINGS = {
+    SYSTEM_TIME_ADDRESS: (2, 946684800, 0xFFFFFFFF),
+    EXPORT_LIMIT_ENABLE_ADDRESS: (1, 0, 1),
+    EXPORT_LIMIT_ADDRESS: (2, 0, MAX_EXPORT_LIMIT),
+}
 
 
 class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
@@ -57,6 +75,9 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
         )
         self.official_entry_id: str = entry.data[CONF_OFFICIAL_ENTRY_ID]
         self.device = battery.device
+        self.published_registers_enabled = (
+            battery.device.model in PUBLISHED_REGISTER_MODELS
+        )
         self.off_grid_output_power_enabled = (
             battery.device.model == SOLARBANK_4_E5000_PRO
             or entry.options.get(CONF_ENABLE_OFF_GRID_OUTPUT_POWER, False)
@@ -115,7 +136,12 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
             backup_reserve = await client.async_read_backup_reserve()
         except BackupReserveError as err:
             _LOGGER.debug("Backup reserve read failed: %s", err)
-        if all(
+        published_values = (
+            await self._async_read_published_values(client)
+            if self.published_registers_enabled
+            else {}
+        )
+        if not published_values and all(
             reading is None
             for reading in (
                 temperature,
@@ -133,7 +159,106 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
             state_of_health=state_of_health,
             backup_reserve=backup_reserve,
             off_grid_output_power=off_grid_output_power,
+            published_values=published_values,
         )
+
+    async def _async_read_published_values(
+        self, client: AnkerSolixExtrasClient
+    ) -> dict[int, int]:
+        """Poll each documented value independently of unsupported neighbors."""
+        values = {}
+        for address, count in _PUBLISHED_INPUTS.items():
+            try:
+                values[address] = await client.async_read_unsigned(address, count)
+            except RegisterReadError as err:
+                _LOGGER.debug("Published input read failed: %s", err)
+        for address in _PUBLISHED_SETTINGS:
+            try:
+                values[address] = await self._async_read_published_setting(address)
+            except RegisterReadError as err:
+                _LOGGER.debug("Published setting read failed: %s", err)
+        return values
+
+    async def _async_read_published_setting(self, address: int) -> int:
+        """Check that the device exposes the setting and returns a valid value."""
+        count, minimum, maximum = _PUBLISHED_SETTINGS[address]
+        value = await self._client.async_read_unsigned(address, count, holding=True)
+        if not minimum <= value <= maximum:
+            raise RegisterReadError(f"Invalid setting at register {address}")
+        return value
+
+    async def async_set_export_limit_enabled(self, enabled: bool) -> None:
+        """Set the export limit flag on the linked battery."""
+        await self._async_set_published_setting(
+            EXPORT_LIMIT_ENABLE_ADDRESS, int(enabled)
+        )
+
+    async def async_set_export_limit(self, watts: float) -> None:
+        """Set the export limit in whole watts."""
+        if not 0 <= watts <= MAX_EXPORT_LIMIT or watts != int(watts):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="invalid_export_limit"
+            )
+        await self._async_set_published_setting(EXPORT_LIMIT_ADDRESS, int(watts))
+
+    async def async_sync_system_time(self) -> None:
+        """Set the battery clock to the current Home Assistant time on request."""
+        await self._async_set_published_setting(SYSTEM_TIME_ADDRESS)
+
+    async def _async_set_published_setting(
+        self, address: int, value: int | None = None
+    ) -> None:
+        """Check model and fresh state, then serialize the write and readback."""
+        async with self._io_lock:
+            try:
+                self._check_linked_battery()
+                if not self.published_registers_enabled:
+                    raise RegisterReadError(
+                        "Model is outside the published register map"
+                    )
+                await self._async_read_published_setting(address)
+                self._check_linked_battery()
+            except (UpdateFailed, RegisterReadError) as err:
+                self._publish_setting(address, None)
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN, translation_key="setting_unavailable"
+                ) from err
+
+            syncing_clock = address == SYSTEM_TIME_ADDRESS
+            if syncing_clock:
+                value = int(time())
+            assert value is not None
+            started = monotonic()
+            try:
+                if _PUBLISHED_SETTINGS[address][0] == 1:
+                    await self._client.async_write_register(address, value)
+                else:
+                    await self._client.async_write_registers(
+                        address, [value >> 16, value & 0xFFFF]
+                    )
+                updated = await self._async_read_published_setting(address)
+            except (RegisterReadError, RegisterWriteError) as err:
+                self._publish_setting(address, None)
+                raise HomeAssistantError(
+                    translation_domain=DOMAIN, translation_key="setting_write_failed"
+                ) from err
+
+            self._publish_setting(address, updated)
+            tolerance = int(monotonic() - started) + 1 if syncing_clock else 0
+            if not value <= updated <= value + tolerance:
+                raise HomeAssistantError(
+                    translation_domain=DOMAIN, translation_key="setting_write_failed"
+                )
+
+    def _publish_setting(self, address: int, value: int | None) -> None:
+        """Publish confirmed settings without reviving stale measurements."""
+        if self.last_update_success:
+            values = self.data.published_values.copy()
+            if value is None:
+                values.pop(address, None)
+            else:
+                values[address] = value
+            self.async_set_updated_data(replace(self.data, published_values=values))
 
     async def async_set_reserve_enabled(self, enabled: bool) -> None:
         """Check the switch capability and state, then write and confirm."""

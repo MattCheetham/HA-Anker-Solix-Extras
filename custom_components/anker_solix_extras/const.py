@@ -17,12 +17,25 @@ RESERVE_ENABLE_ADDRESS = 60003
 MODBUS_DEVICE_ID = 1
 SOLARBANK_4_E5000_PRO = "Anker SOLIX Solarbank 4 E5000 Pro"
 
-SUPPORTED_MODELS = frozenset(
+PUBLISHED_REGISTER_MODELS = frozenset(
     {
-        SOLARBANK_4_E5000_PRO,
         "Anker SOLIX Solarbank Max",
         "Anker SOLIX Solarbank Max AC",
         "Anker SOLIX XE",
         "Anker SOLIX XE AC",
     }
 )
+SUPPORTED_MODELS = PUBLISHED_REGISTER_MODELS | {SOLARBANK_4_E5000_PRO}
+
+ENERGY_ADDRESSES = {
+    "total_battery_charge_energy": 10022,
+    "total_battery_discharge_energy": 10024,
+    "total_load_energy": 10026,
+    "total_grid_import_energy": 10030,
+    "total_grid_export_energy": 10034,
+}
+PCS_COUNT_ADDRESSES = {"pcs_count": 10040, "available_pcs_count": 10041}
+SYSTEM_TIME_ADDRESS = 10060
+EXPORT_LIMIT_ENABLE_ADDRESS = 10074
+EXPORT_LIMIT_ADDRESS = 10075
+MAX_EXPORT_LIMIT = (1 << 31) - 1

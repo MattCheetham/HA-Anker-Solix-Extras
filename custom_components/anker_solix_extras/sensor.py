@@ -1,19 +1,27 @@
 """Additional sensors attached to an existing official Anker device."""
 
+from datetime import UTC, datetime
+
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import PERCENTAGE, UnitOfPower, UnitOfTemperature
+from homeassistant.const import PERCENTAGE, UnitOfEnergy, UnitOfPower, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import AnkerSolixExtrasConfigEntry
-from .const import PLANT_STATUS_STATES
+from .const import (
+    ENERGY_ADDRESSES,
+    PCS_COUNT_ADDRESSES,
+    PLANT_STATUS_STATES,
+    SYSTEM_TIME_ADDRESS,
+)
 from .coordinator import AnkerSolixExtrasCoordinator
+from .entity import PublishedRegisterEntity
 
 BATTERY_TEMPERATURE = SensorEntityDescription(
     key="battery_temperature",
@@ -76,7 +84,56 @@ async def async_setup_entry(
     ]
     if coordinator.off_grid_output_power_enabled:
         entities.append(AnkerSolixOffGridOutputPower(coordinator))
+    if coordinator.published_registers_enabled:
+        entities.extend(
+            AnkerSolixPublishedSensor(coordinator, key, address)
+            for key, address in (ENERGY_ADDRESSES | PCS_COUNT_ADDRESSES).items()
+        )
+        entities.append(
+            AnkerSolixPublishedSensor(coordinator, "system_time", SYSTEM_TIME_ADDRESS)
+        )
     async_add_entities(entities)
+
+
+class AnkerSolixPublishedSensor(PublishedRegisterEntity, SensorEntity):
+    """Expose a published energy counter, PCS count, or timestamp."""
+
+    def __init__(
+        self, coordinator: AnkerSolixExtrasCoordinator, key: str, address: int
+    ) -> None:
+        """Assign sensor metadata based on the register's measurement."""
+        if key in ENERGY_ADDRESSES:
+            self.entity_description = SensorEntityDescription(
+                key=key,
+                translation_key=key,
+                device_class=SensorDeviceClass.ENERGY,
+                native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+                state_class=SensorStateClass.TOTAL_INCREASING,
+                suggested_display_precision=1,
+            )
+        else:
+            self.entity_description = SensorEntityDescription(
+                key=key,
+                translation_key=key,
+                device_class=(
+                    SensorDeviceClass.TIMESTAMP
+                    if address == SYSTEM_TIME_ADDRESS
+                    else None
+                ),
+            )
+        super().__init__(coordinator, address)
+
+    @property
+    def native_value(self) -> datetime | float | int | None:
+        """Convert the raw register value to the sensor's native representation."""
+        value = self._register_value if self.available else None
+        if value is None:
+            return None
+        if self._address == SYSTEM_TIME_ADDRESS:
+            return datetime.fromtimestamp(value, UTC)
+        if self.entity_description.key in ENERGY_ADDRESSES:
+            return value / 10
+        return value
 
 
 class AnkerSolixBatteryTemperature(

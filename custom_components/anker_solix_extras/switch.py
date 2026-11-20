@@ -8,7 +8,9 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import AnkerSolixExtrasConfigEntry
+from .const import EXPORT_LIMIT_ENABLE_ADDRESS
 from .coordinator import AnkerSolixExtrasCoordinator
+from .entity import PublishedRegisterEntity
 
 
 async def async_setup_entry(
@@ -17,7 +19,38 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Add the backup reserve switch."""
-    async_add_entities([AnkerSolixBackupReserveSwitch(entry.runtime_data)])
+    coordinator = entry.runtime_data
+    entities: list[SwitchEntity] = [AnkerSolixBackupReserveSwitch(coordinator)]
+    if coordinator.published_registers_enabled:
+        entities.append(AnkerSolixExportLimitSwitch(coordinator))
+    async_add_entities(entities)
+
+
+class AnkerSolixExportLimitSwitch(PublishedRegisterEntity, SwitchEntity):
+    """Enable or disable the device's export limit."""
+
+    _attr_entity_registry_enabled_default = False
+    entity_description = SwitchEntityDescription(
+        key="export_limit_enabled", translation_key="export_limit_enabled"
+    )
+
+    def __init__(self, coordinator: AnkerSolixExtrasCoordinator) -> None:
+        """Bind to the export limit enable flag."""
+        super().__init__(coordinator, EXPORT_LIMIT_ENABLE_ADDRESS)
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return the reported enable flag."""
+        value = self._register_value
+        return bool(value) if value is not None else None
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Enable the export limit."""
+        await self.coordinator.async_set_export_limit_enabled(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Disable the export limit."""
+        await self.coordinator.async_set_export_limit_enabled(False)
 
 
 class AnkerSolixBackupReserveSwitch(
