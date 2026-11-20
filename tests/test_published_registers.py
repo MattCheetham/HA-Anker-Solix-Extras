@@ -6,6 +6,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.entity import EntityCategory
 from modbus_connection import IllegalDataAddressError
 
 from custom_components.anker_solix_extras.const import (
@@ -44,7 +45,11 @@ async def test_published_registers_beta_option(
     await set_beta_option(True)
     client.async_read_unsigned.assert_any_await(10040, 1)
     sensor_id = registry.async_get_entity_id("sensor", DOMAIN, unique_id)
-    assert hass.states.get(sensor_id).state == STATE_UNAVAILABLE
+    assert (
+        registry.async_get(sensor_id).disabled_by
+        is er.RegistryEntryDisabler.INTEGRATION
+    )
+    assert hass.states.get(sensor_id) is None
     control_id = registry.async_get_entity_id(
         "switch", DOMAIN, f"{official_entry.entry_id}_export_limit_enabled"
     )
@@ -119,14 +124,23 @@ async def test_published_registers(
         "total_load_energy": "0.0",
         "total_grid_import_energy": "4.5",
         "total_grid_export_energy": "6.7",
-        "pcs_count": "2",
-        "available_pcs_count": "1",
-        "system_time": "2023-11-14T22:13:20+00:00",
     }
     for key, value in expected.items():
         sensor = entity_id("sensor", key)
         assert registry.async_get(sensor).device_id == device.id
         assert hass.states.get(sensor).state == value
+    diagnostics = {
+        "pcs_count": "2",
+        "available_pcs_count": "1",
+        "system_time": "2023-11-14T22:13:20+00:00",
+    }
+    for key in diagnostics:
+        entry = registry.async_get(entity_id("sensor", key))
+        assert entry.device_id == device.id
+        assert entry.entity_category is EntityCategory.DIAGNOSTIC
+        assert entry.disabled_by is er.RegistryEntryDisabler.INTEGRATION
+        assert hass.states.get(entry.entity_id) is None
+        registry.async_update_entity(entry.entity_id, disabled_by=None)
     controls = {}
     for platform, key in (
         ("button", "sync_system_time"),
@@ -144,6 +158,8 @@ async def test_published_registers(
     unit.write_register.assert_not_awaited()
     unit.write_registers.assert_not_awaited()
     coordinator = extras_entry.runtime_data
+    for key, value in diagnostics.items():
+        assert hass.states.get(entity_id("sensor", key)).state == value
 
     inputs.pop(10024)
     await coordinator.async_refresh()

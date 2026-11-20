@@ -42,6 +42,11 @@ on Solarbank Max, Solarbank Max AC, XE, and XE AC, the models listed in the
 On other supported models, turn on **Enable Plant Modbus Entities (beta)**
 in the Extras integration options to try these entities. Availability depends
 on the device and firmware. Hardware verification in Extras is pending.
+PCS Count, Available PCS Count, and System Time are diagnostic sensors disabled
+by default. Enable them from the device's entity list. On one battery,
+Available PCS Count returned fluctuating values in the thousands,
+so its readings on that unit are unreliable.
+
 Anker labels System Time as a
 timestamp without specifying its encoding. Extras interprets it as a
 high-word-first Unix timestamp in seconds and requires a valid clock reading
