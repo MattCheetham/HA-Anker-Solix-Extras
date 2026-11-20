@@ -9,6 +9,16 @@ continue to work as before.
 
 This is an independent community project, not developed or supported by Anker.
 
+## Preview
+
+Extras entities are outlined in red on the battery's device page in Home Assistant.
+
+<p>
+  <img src="docs/images/preview-battery-sensors.png" width="32%" alt="Battery Heating Active, Battery Heating Power, Battery SOH, and Battery Temperature highlighted in the Sensors card">
+  <img src="docs/images/preview-grid-sensors.png" width="32%" alt="Off-Grid Output Power and Plant Status highlighted in the Sensors card">
+  <img src="docs/images/preview-backup-reserve.png" width="32%" alt="Backup Reserve switch highlighted in the Controls card">
+</p>
+
 ## Sensors & Inputs
 
 | Sensor | Description | Display | Source |
