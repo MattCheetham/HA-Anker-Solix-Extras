@@ -58,7 +58,7 @@ async def test_sensor_attaches_to_official_device(
     assert state.attributes["unit_of_measurement"] == "°C"
     assert state.attributes["device_class"] == "temperature"
     assert state.attributes["state_class"] == "measurement"
-    assert extras_entry.runtime_data.update_interval.total_seconds() == 60
+    assert extras_entry.runtime_data.update_interval.total_seconds() == 10
     assert (
         er.async_get(hass)
         .async_get(entity.entity_id)
