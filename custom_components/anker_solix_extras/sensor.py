@@ -65,6 +65,7 @@ OFF_GRID_OUTPUT_POWER = SensorEntityDescription(
 PLANT_STATUS = SensorEntityDescription(
     key="plant_status",
     translation_key="plant_status",
+    icon="mdi:home-battery",
     device_class=SensorDeviceClass.ENUM,
     options=list(PLANT_STATUS_STATES.values()),
 )

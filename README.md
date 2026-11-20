@@ -24,7 +24,7 @@ Extras entities are outlined in red on the battery's device page in Home Assista
 | Sensor | Description | Display | Source |
 | --- | --- | --- | --- |
 | Battery Temperature | The internal battery temperature, averaged across installed units | °C, whole degrees by default | Input register 10156, INT16 |
-| Battery SOH | Combined state of health reported by the battery system | % | Input register 10015, UINT16 |
+| SOH | Combined state of health reported by the battery system | % | Input register 10015, UINT16 |
 | Plant Status | Operating status reported by the battery system | 1 = On-grid / 2 = Off-grid / 3 = Standby / 4 = Fault | Input register 10000, UINT16 |
 | Battery Heating Power | Estimated from battery and AC power during AC absorption; may include conversion losses or other consumption | W, whole watts by default | Calculated |
 | Battery Heating Active | On when estimated heating power is greater than zero; shares the estimate's limitations | On / off | Calculated |

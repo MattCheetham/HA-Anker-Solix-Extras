@@ -115,13 +115,14 @@ async def test_extras_entities_share_official_device(
     status = hass.states.get(entities["plant_status"].entity_id)
     assert status.state == "on_grid"
     assert status.name.endswith("Plant Status")
+    assert status.attributes["icon"] == "mdi:home-battery"
     assert status.attributes["device_class"] == "enum"
     assert status.attributes["options"] == ["on_grid", "off_grid", "standby", "fault"]
 
     soh = entities["battery_state_of_health"]
     state = hass.states.get(soh.entity_id)
     assert state.state == "100"
-    assert state.name.endswith("Battery SOH")
+    assert state.name == status.name.removesuffix("Plant Status") + "SOH"
     assert state.attributes["unit_of_measurement"] == "%"
     assert state.attributes["state_class"] == "measurement"
     assert soh.options["sensor"]["suggested_display_precision"] == 0
