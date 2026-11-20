@@ -136,9 +136,13 @@ async def test_options_enable_and_disable_off_grid_power_on_another_model(
             if rejects_off_grid_read:
                 raise IllegalDataAddressError("not supported")
             return [0, 23]
-        return {10000: [0] * 10, 10015: [100], 10156: [250], 32775: [0]}[address]
+        values = {10000: [0] * 10, 10015: [100], 10156: [250], 32775: [0]}
+        if address not in values:
+            raise IllegalDataAddressError("not supported")
+        return values[address]
 
     unit.read_input_registers.side_effect = read_input_registers
+    unit.read_holding_registers.side_effect = IllegalDataAddressError("not supported")
     assert await hass.config_entries.async_setup(extras_entry.entry_id)
     await hass.async_block_till_done()
     entity_registry = er.async_get(hass)

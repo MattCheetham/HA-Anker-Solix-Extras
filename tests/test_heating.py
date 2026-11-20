@@ -17,6 +17,8 @@ from custom_components.anker_solix_extras.client import (
 )
 from custom_components.anker_solix_extras.const import (
     DOMAIN,
+    ENERGY_ADDRESSES,
+    PCS_COUNT_ADDRESSES,
     SOLARBANK_4_E5000_PRO,
     SUPPORTED_MODELS,
 )
@@ -77,6 +79,11 @@ async def test_extras_entities_share_official_device(
         off_grid_read.assert_awaited_once()
     else:
         off_grid_read.assert_not_awaited()
+        expected.update(ENERGY_ADDRESSES)
+        expected.update(PCS_COUNT_ADDRESSES)
+        expected.update(
+            {"system_time", "sync_system_time", "export_limit", "export_limit_enabled"}
+        )
     assert set(entities) == expected
     for key, entity in entities.items():
         assert entity.device_id == device.id

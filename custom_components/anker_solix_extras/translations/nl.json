@@ -42,16 +42,53 @@
       },
       "off_grid_output_power": {
         "name": "Uitgangsvermogen buiten het net"
+      },
+      "total_battery_charge_energy": {
+        "name": "Totale laadenergie van de batterij"
+      },
+      "total_battery_discharge_energy": {
+        "name": "Totale ontlaadenergie van de batterij"
+      },
+      "total_load_energy": {
+        "name": "Totaal energieverbruik van de belasting"
+      },
+      "total_grid_import_energy": {
+        "name": "Totale netafname"
+      },
+      "total_grid_export_energy": {
+        "name": "Totale teruglevering"
+      },
+      "pcs_count": {
+        "name": "Aantal PCS-eenheden"
+      },
+      "available_pcs_count": {
+        "name": "Aantal beschikbare PCS-eenheden"
+      },
+      "system_time": {
+        "name": "Systeemtijd"
       }
     },
     "switch": {
       "backup_reserve": {
         "name": "Noodstroomreserve"
+      },
+      "export_limit_enabled": {
+        "name": "Terugleverbegrenzing"
       }
     },
     "binary_sensor": {
       "battery_heating_active": {
         "name": "Batterijverwarming actief"
+      }
+    },
+    "number": {
+      "export_limit": {
+        "name": "Limiet terugleververmogen"
+      }
+    },
+    "button": {
+      "sync_system_time": {
+        "name": "Systeemtijd synchroniseren"
       }
     }
   },
@@ -61,6 +98,15 @@
     },
     "reserve_write_failed": {
       "message": "De wijziging van de noodstroomreserve kon niet worden bevestigd. Controleer de verbinding met de batterij en de huidige instelling."
+    },
+    "invalid_export_limit": {
+      "message": "Voer een niet-negatieve limiet voor terugleververmogen in hele watts binnen het toegestane bereik in."
+    },
+    "setting_unavailable": {
+      "message": "Deze instelling is niet beschikbaar op de gekoppelde batterij."
+    },
+    "setting_write_failed": {
+      "message": "De wijziging kon niet worden bevestigd. Controleer de batterijverbinding en de huidige instelling."
     }
   },
   "options": {

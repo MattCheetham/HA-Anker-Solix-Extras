@@ -9,6 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from modbus_connection import ModbusUnit
 
+from custom_components.anker_solix_extras.client import RegisterReadError
 from custom_components.anker_solix_extras.const import DOMAIN, OFFICIAL_DOMAIN
 from custom_components.anker_solix_extras.models import BatteryPower
 
@@ -96,6 +97,9 @@ def mock_client(mock_connection) -> Generator[MagicMock]:
         client.async_read_state_of_health = AsyncMock(return_value=100)
         client.async_read_off_grid_output_power = AsyncMock(return_value=23)
         client.async_read_backup_reserve = AsyncMock(return_value=False)
+        client.async_read_unsigned = AsyncMock(
+            side_effect=RegisterReadError("Unsupported register")
+        )
         yield factory
 
 

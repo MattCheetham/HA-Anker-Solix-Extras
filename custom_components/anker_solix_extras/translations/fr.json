@@ -42,16 +42,53 @@
       },
       "off_grid_output_power": {
         "name": "Puissance de sortie hors réseau"
+      },
+      "total_battery_charge_energy": {
+        "name": "Ã‰nergie totale de charge de la batterie"
+      },
+      "total_battery_discharge_energy": {
+        "name": "Ã‰nergie totale de dÃ©charge de la batterie"
+      },
+      "total_load_energy": {
+        "name": "Ã‰nergie totale consommÃ©e par la charge"
+      },
+      "total_grid_import_energy": {
+        "name": "Ã‰nergie totale importÃ©e du rÃ©seau"
+      },
+      "total_grid_export_energy": {
+        "name": "Ã‰nergie totale injectÃ©e dans le rÃ©seau"
+      },
+      "pcs_count": {
+        "name": "Nombre de PCS"
+      },
+      "available_pcs_count": {
+        "name": "Nombre de PCS disponibles"
+      },
+      "system_time": {
+        "name": "Heure systÃ¨me"
       }
     },
     "switch": {
       "backup_reserve": {
         "name": "Réserve de secours"
+      },
+      "export_limit_enabled": {
+        "name": "Limitation de lâ€™injection"
       }
     },
     "binary_sensor": {
       "battery_heating_active": {
         "name": "Chauffage de la batterie actif"
+      }
+    },
+    "number": {
+      "export_limit": {
+        "name": "Limite de puissance dâ€™injection"
+      }
+    },
+    "button": {
+      "sync_system_time": {
+        "name": "Synchroniser lâ€™heure systÃ¨me"
       }
     }
   },
@@ -61,6 +98,15 @@
     },
     "reserve_write_failed": {
       "message": "Impossible de confirmer la modification de la réserve de secours. Vérifiez la connexion à la batterie et le réglage actuel."
+    },
+    "invalid_export_limit": {
+      "message": "Saisissez une limite de puissance dâ€™injection positive ou nulle, en watts entiers, dans la plage autorisÃ©e."
+    },
+    "setting_unavailable": {
+      "message": "Ce rÃ©glage est indisponible sur la batterie associÃ©e."
+    },
+    "setting_write_failed": {
+      "message": "Impossible de confirmer la modification. VÃ©rifiez la connexion Ã  la batterie et le rÃ©glage actuel."
     }
   },
   "options": {

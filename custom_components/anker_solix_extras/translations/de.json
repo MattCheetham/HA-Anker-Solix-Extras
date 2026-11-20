@@ -42,16 +42,53 @@
       },
       "off_grid_output_power": {
         "name": "Inselbetrieb-Ausgangsleistung"
+      },
+      "total_battery_charge_energy": {
+        "name": "Gesamte Batterieladeenergie"
+      },
+      "total_battery_discharge_energy": {
+        "name": "Gesamte Batterieentladeenergie"
+      },
+      "total_load_energy": {
+        "name": "Gesamter Lastverbrauch"
+      },
+      "total_grid_import_energy": {
+        "name": "Gesamter Netzbezug"
+      },
+      "total_grid_export_energy": {
+        "name": "Gesamte Netzeinspeisung"
+      },
+      "pcs_count": {
+        "name": "Anzahl der PCS"
+      },
+      "available_pcs_count": {
+        "name": "Anzahl verfÃ¼gbarer PCS"
+      },
+      "system_time": {
+        "name": "Systemzeit"
       }
     },
     "switch": {
       "backup_reserve": {
         "name": "Notstromreserve"
+      },
+      "export_limit_enabled": {
+        "name": "Einspeisebegrenzung"
       }
     },
     "binary_sensor": {
       "battery_heating_active": {
         "name": "Akkuheizung aktiv"
+      }
+    },
+    "number": {
+      "export_limit": {
+        "name": "Einspeiseleistungsgrenze"
+      }
+    },
+    "button": {
+      "sync_system_time": {
+        "name": "Systemzeit synchronisieren"
       }
     }
   },
@@ -61,6 +98,15 @@
     },
     "reserve_write_failed": {
       "message": "Die Änderung der Notstromreserve konnte nicht bestätigt werden. Prüfen Sie die Verbindung zum Akku und die aktuelle Einstellung."
+    },
+    "invalid_export_limit": {
+      "message": "Gib eine nichtnegative Einspeiseleistungsgrenze in ganzen Watt innerhalb des zulÃ¤ssigen Bereichs ein."
+    },
+    "setting_unavailable": {
+      "message": "Diese Einstellung ist fÃ¼r die verknÃ¼pfte Batterie nicht verfÃ¼gbar."
+    },
+    "setting_write_failed": {
+      "message": "Die Ã„nderung konnte nicht bestÃ¤tigt werden. PrÃ¼fe die Verbindung zur Batterie und die aktuelle Einstellung."
     }
   },
   "options": {

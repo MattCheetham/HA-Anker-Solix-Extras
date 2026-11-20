@@ -40,6 +40,10 @@ class RegisterWriteError(Exception):
     """A Modbus register write could not be completed."""
 
 
+class RegisterReadError(Exception):
+    """A Modbus response could not be read or decoded."""
+
+
 class AnkerSolixExtrasClient:
     """Read and write Modbus registers through a shared unit."""
 
@@ -132,6 +136,32 @@ class AnkerSolixExtrasClient:
         if not _valid_words(registers, 1) or registers[0] not in (0, 1):
             raise BackupReserveError("Invalid reserve enable flag")
         return bool(registers[0])
+
+    async def async_read_unsigned(
+        self, address: int, count: int, *, holding: bool = False
+    ) -> int:
+        """Read one unsigned value, with the high word first."""
+        try:
+            if holding:
+                words = await self._unit.read_holding_registers(address, count)
+            else:
+                words = await self._unit.read_input_registers(address, count)
+        except (ModbusError, OSError) as err:
+            raise RegisterReadError(f"Unable to read register {address}") from err
+        if not _valid_words(words, count):
+            raise RegisterReadError(f"Invalid response for register {address}")
+        return (words[0] << 16) | words[1] if count == 2 else words[0]
+
+    async def async_write_registers(self, address: int, words: list[int]) -> None:
+        """Write contiguous holding registers atomically (FC16)."""
+        if not self._unit.connected:
+            raise RegisterWriteError("Modbus connection closed before the write")
+        try:
+            await self._unit.write_registers(address, words)
+        except (ModbusError, OSError) as err:
+            raise RegisterWriteError(
+                f"Unable to write holding registers at {address}"
+            ) from err
 
     async def async_write_register(self, address: int, value: int) -> None:
         """Write one holding register (FC06) on the active connection."""

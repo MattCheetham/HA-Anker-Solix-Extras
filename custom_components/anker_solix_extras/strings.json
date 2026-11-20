@@ -42,16 +42,53 @@
       },
       "off_grid_output_power": {
         "name": "Off-Grid Output Power"
+      },
+      "total_battery_charge_energy": {
+        "name": "Total Battery Charge Energy"
+      },
+      "total_battery_discharge_energy": {
+        "name": "Total Battery Discharge Energy"
+      },
+      "total_load_energy": {
+        "name": "Total Load Consumption Energy"
+      },
+      "total_grid_import_energy": {
+        "name": "Total Grid Import Energy"
+      },
+      "total_grid_export_energy": {
+        "name": "Total Grid Export Energy"
+      },
+      "pcs_count": {
+        "name": "PCS Count"
+      },
+      "available_pcs_count": {
+        "name": "Available PCS Count"
+      },
+      "system_time": {
+        "name": "System Time"
       }
     },
     "switch": {
       "backup_reserve": {
         "name": "Backup Reserve"
+      },
+      "export_limit_enabled": {
+        "name": "Export Power Limitation"
       }
     },
     "binary_sensor": {
       "battery_heating_active": {
         "name": "Battery Heating Active"
+      }
+    },
+    "number": {
+      "export_limit": {
+        "name": "Export Power Limit"
+      }
+    },
+    "button": {
+      "sync_system_time": {
+        "name": "Sync System Time"
       }
     }
   },
@@ -61,6 +98,15 @@
     },
     "reserve_write_failed": {
       "message": "Could not confirm the backup reserve change. Check the battery connection and current setting."
+    },
+    "invalid_export_limit": {
+      "message": "Enter a nonnegative export power limit in whole watts within the supported range."
+    },
+    "setting_unavailable": {
+      "message": "This setting is unavailable on the linked battery."
+    },
+    "setting_write_failed": {
+      "message": "Could not confirm the setting change. Check the battery connection and current setting."
     }
   },
   "options": {
