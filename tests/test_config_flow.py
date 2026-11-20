@@ -49,7 +49,7 @@ async def test_choose_official_battery(
     assert result["title"] == official_entry.title
     assert result["data"] == {CONF_OFFICIAL_ENTRY_ID: official_entry.entry_id}
     assert result["result"].unique_id == official_entry.entry_id
-    assert result["result"].options == {CONF_SCAN_INTERVAL: interval or 60}
+    assert result["result"].options == {CONF_SCAN_INTERVAL: interval or 10}
     connection.for_unit.assert_called_once_with(1)
     unit.read_input_registers.assert_awaited_once_with(10156, 1)
     unit.write_register.assert_not_awaited()

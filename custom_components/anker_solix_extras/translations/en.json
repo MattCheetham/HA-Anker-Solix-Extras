@@ -67,7 +67,7 @@
     "step": {
       "init": {
         "title": "Integration settings",
-        "description": "Choose how often Extras reads the battery over Modbus. Enter a whole number of seconds, at least 1. The default is 60 seconds.",
+        "description": "Choose how often Extras reads the battery over Modbus. Enter a whole number of seconds, at least 1. The default is 10 seconds.",
         "data": {
           "scan_interval": "Polling interval (seconds)",
           "enable_off_grid_output_power": "Enable Off-Grid Output Power (beta)"

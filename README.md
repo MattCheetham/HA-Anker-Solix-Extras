@@ -116,7 +116,7 @@ Anker SOLIX Official entry. See the [Home Assistant Modbus documentation](https:
 
 ## Polling interval
 
-Extras reads state from your battery every **60 seconds** by
+Extras reads state from your battery every **10 seconds** by
 default. Choose a custom interval during setup, or change it later under
 **Settings → Devices & services
 → Anker SOLIX Extras → Configure**. Enter a whole number of seconds, at least 1.
