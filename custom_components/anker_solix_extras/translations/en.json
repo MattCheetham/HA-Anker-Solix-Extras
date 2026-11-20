@@ -35,7 +35,7 @@
         "name": "Battery Temperature"
       },
       "battery_state_of_health": {
-        "name": "Battery SOH"
+        "name": "SOH"
       },
       "battery_heating_power": {
         "name": "Battery Heating Power"

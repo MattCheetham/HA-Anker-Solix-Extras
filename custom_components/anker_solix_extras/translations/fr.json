@@ -35,7 +35,7 @@
         "name": "Température de la batterie"
       },
       "battery_state_of_health": {
-        "name": "État de santé de la batterie"
+        "name": "SOH"
       },
       "battery_heating_power": {
         "name": "Puissance de chauffage de la batterie"
