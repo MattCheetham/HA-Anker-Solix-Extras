@@ -36,10 +36,13 @@ Extras entities are outlined in red on the battery's device page in Home Assista
 | System Time / Sync System Time | Shows the battery clock and provides a button to set it to Home Assistant's current time | Timestamp / button | Holding registers 10060–10061 |
 | Export Power Limitation / Export Power Limit | A switch to apply the device's export limit and a separate control for the limit in whole watts | On / off and W | Holding register 10074 (UINT16) and 10075–10076 (INT32) |
 
-The energy totals, PCS counts, clock, and export limit are added on Solarbank
-Max, Solarbank Max AC, XE, and XE AC, the models listed in the
+The energy totals, PCS counts, clock, and export limit are added automatically
+on Solarbank Max, Solarbank Max AC, XE, and XE AC, the models listed in the
 [Anker SOLIX Modbus protocol](https://salesforce-knowledge-download.s3.us-west-2.amazonaws.com/000039871/en_US/000039871.pdf).
-Hardware verification in Extras is pending. Anker labels System Time as a
+On other supported models, turn on **Enable Plant Modbus Entities (beta)**
+in the Extras integration options to try these entities. Availability depends
+on the device and firmware. Hardware verification in Extras is pending.
+Anker labels System Time as a
 timestamp without specifying its encoding. Extras interprets it as a
 high-word-first Unix timestamp in seconds and requires a valid clock reading
 before allowing synchronization. The clock sync button and both export limit

@@ -1,13 +1,65 @@
 """Verify the documented register entities through the real HA setup."""
 
 import pytest
-from homeassistant.const import STATE_UNAVAILABLE
+from homeassistant.const import CONF_SCAN_INTERVAL, STATE_UNAVAILABLE
+from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from modbus_connection import IllegalDataAddressError
 
-from custom_components.anker_solix_extras.const import DOMAIN
+from custom_components.anker_solix_extras.const import (
+    CONF_ENABLE_PUBLISHED_REGISTERS,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+)
+
+
+async def test_published_registers_beta_option(
+    hass, extras_entry, official_entry, mock_client
+) -> None:
+    """Opt in on the E5000 Pro and stop polling after opting out."""
+    assert await hass.config_entries.async_setup(extras_entry.entry_id)
+    await hass.async_block_till_done()
+    client = mock_client.return_value
+    registry = er.async_get(hass)
+    unique_id = f"{official_entry.entry_id}_pcs_count"
+    client.async_read_unsigned.assert_not_awaited()
+    assert registry.async_get_entity_id("sensor", DOMAIN, unique_id) is None
+
+    async def set_beta_option(enabled: bool) -> None:
+        flow = await hass.config_entries.options.async_init(extras_entry.entry_id)
+        defaults = flow["data_schema"]({})
+        assert defaults[CONF_ENABLE_PUBLISHED_REGISTERS] is not enabled
+        result = await hass.config_entries.options.async_configure(
+            flow["flow_id"],
+            {
+                CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
+                CONF_ENABLE_PUBLISHED_REGISTERS: enabled,
+            },
+        )
+        assert result["type"] is FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+
+    await set_beta_option(True)
+    client.async_read_unsigned.assert_any_await(10040, 1)
+    sensor_id = registry.async_get_entity_id("sensor", DOMAIN, unique_id)
+    assert hass.states.get(sensor_id).state == STATE_UNAVAILABLE
+    control_id = registry.async_get_entity_id(
+        "switch", DOMAIN, f"{official_entry.entry_id}_export_limit_enabled"
+    )
+    assert (
+        registry.async_get(control_id).disabled_by
+        is er.RegistryEntryDisabler.INTEGRATION
+    )
+
+    client.async_read_unsigned.reset_mock()
+    await set_beta_option(False)
+    client.async_read_unsigned.assert_not_awaited()
+    state = hass.states.get(sensor_id)
+    assert state is None or state.state == STATE_UNAVAILABLE
+    client.async_write_register.assert_not_awaited()
+    client.async_write_registers.assert_not_awaited()
 
 
 async def test_published_registers(

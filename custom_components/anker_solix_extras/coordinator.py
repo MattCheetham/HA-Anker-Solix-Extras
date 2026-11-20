@@ -24,6 +24,7 @@ from .client import (
 )
 from .const import (
     CONF_ENABLE_OFF_GRID_OUTPUT_POWER,
+    CONF_ENABLE_PUBLISHED_REGISTERS,
     CONF_OFFICIAL_ENTRY_ID,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
@@ -77,6 +78,7 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
         self.device = battery.device
         self.published_registers_enabled = (
             battery.device.model in PUBLISHED_REGISTER_MODELS
+            or entry.options.get(CONF_ENABLE_PUBLISHED_REGISTERS, False)
         )
         self.off_grid_output_power_enabled = (
             battery.device.model == SOLARBANK_4_E5000_PRO
@@ -213,9 +215,7 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
             try:
                 self._check_linked_battery()
                 if not self.published_registers_enabled:
-                    raise RegisterReadError(
-                        "Model is outside the published register map"
-                    )
+                    raise RegisterReadError("Published registers are disabled")
                 await self._async_read_published_setting(address)
                 self._check_linked_battery()
             except (UpdateFailed, RegisterReadError) as err:
