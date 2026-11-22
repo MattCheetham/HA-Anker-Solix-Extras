@@ -13,7 +13,7 @@
     },
     "error": {
       "battery_unavailable": "De geselecteerde batterij is niet meer beschikbaar in de officiële integratie. Controleer of deze is ingeschakeld en geladen en probeer het opnieuw.",
-      "cannot_read_temperature": "De batterijtemperatuur kon niet worden gelezen. Controleer de verbinding met de batterij en of de firmware ingangsregister 10156 beschikbaar stelt."
+      "cannot_read_measurements": "Er konden geen batterijmetingen worden gelezen. Controleer de lokale Modbus-verbinding met de batterij en de compatibiliteit van de firmware."
     },
     "abort": {
       "already_configured": "Extras is al geconfigureerd voor deze batterij.",

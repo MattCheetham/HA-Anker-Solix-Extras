@@ -13,7 +13,7 @@
     },
     "error": {
       "battery_unavailable": "The selected official battery is no longer available. Check that it is enabled and loaded, then try again.",
-      "cannot_read_temperature": "Could not read the battery temperature. Check the battery connection and that its firmware exposes input register 10156."
+      "cannot_read_measurements": "Could not read any battery measurements. Check the battery's local Modbus connection and firmware compatibility."
     },
     "abort": {
       "already_configured": "Extras is already configured for this battery.",

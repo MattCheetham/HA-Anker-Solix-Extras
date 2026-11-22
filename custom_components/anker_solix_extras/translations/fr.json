@@ -13,7 +13,7 @@
     },
     "error": {
       "battery_unavailable": "La batterie sélectionnée n'est plus disponible dans l'intégration officielle. Vérifiez qu'elle est activée et chargée dans Home Assistant, puis réessayez.",
-      "cannot_read_temperature": "Impossible de lire la température de la batterie. Vérifiez la connexion à la batterie et que son micrologiciel fournit le registre d'entrée 10156."
+      "cannot_read_measurements": "Impossible de lire les mesures de la batterie. Vérifiez la connexion Modbus locale à la batterie et la compatibilité de son micrologiciel."
     },
     "abort": {
       "already_configured": "Extras est déjà configuré pour cette batterie.",
