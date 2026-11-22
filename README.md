@@ -14,8 +14,9 @@ This is an independent community project, not developed or supported by Anker.
 Extras entities are outlined in red on the battery's device page in Home Assistant.
 
 <p>
-  <img src="docs/images/preview-grid-sensors.png" width="48%" alt="Off-Grid Output Power and Plant Status highlighted in the Sensors card">
-  <img src="docs/images/preview-backup-reserve.png" width="48%" alt="Backup Reserve switch highlighted in the Controls card">
+  <img src="docs/images/preview-battery-sensors.png" width="32%" alt="Battery Heating Active, Battery Heating Power, Battery SOH, and Battery Temperature highlighted in the Sensors card">
+  <img src="docs/images/preview-grid-sensors.png" width="32%" alt="Off-Grid Output Power and Plant Status highlighted in the Sensors card">
+  <img src="docs/images/preview-backup-reserve.png" width="32%" alt="Backup Reserve switch highlighted in the Controls card">
 </p>
 
 ## Sensors & Inputs
@@ -120,11 +121,6 @@ After setup, open your battery's existing device page to find the Extras sensors
 You can add them to dashboards and automations like any other Home Assistant
 sensor. Existing dashboards and automations continue to use their original
 entities; Extras does not replace them automatically.
-
-If you used **Battery Heating Active**, switch your automations to a numeric
-state trigger above 0 W on **Battery Heating Power**. For a reusable on/off
-entity, create a template binary sensor that is on above 0 W and unavailable
-when the power reading is unavailable.
 
 On other supported models, open **Settings → Devices & services →
 Anker SOLIX Extras → Configure** and turn on **Enable Off-Grid Output Power
