@@ -7,7 +7,13 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
 from modbus_connection import ModbusTcpParams
 
-from .const import OFFICIAL_DOMAIN, SUPPORTED_MODELS
+from .const import (
+    OFFICIAL_DOMAIN,
+    PCS_COUNT_ADDRESSES,
+    PUBLISHED_REGISTER_MODELS,
+    SOLARBANK_4_E5000_PRO,
+    SUPPORTED_MODELS,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,6 +29,24 @@ class OfficialBattery:
     def modbus_params(self) -> ModbusTcpParams:
         """Use the source endpoint with Home Assistant's shared TCP defaults."""
         return ModbusTcpParams(host=self.host, port=self.port)
+
+    @property
+    def supports_published_registers(self) -> bool:
+        """Return whether the model is listed in Anker's register documentation."""
+        return self.device.model in PUBLISHED_REGISTER_MODELS
+
+    @property
+    def enables_off_grid_output_by_default(self) -> bool:
+        """Return whether to add off-grid output power by default."""
+        return self.device.model == SOLARBANK_4_E5000_PRO
+
+    @property
+    def pcs_count_addresses(self) -> dict[str, int]:
+        """Return PCS count registers offered for this battery model."""
+        addresses = PCS_COUNT_ADDRESSES.copy()
+        if self.device.model == SOLARBANK_4_E5000_PRO:
+            addresses.pop("available_pcs_count")
+        return addresses
 
 
 @callback

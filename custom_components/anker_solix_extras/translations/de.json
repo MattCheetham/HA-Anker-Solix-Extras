@@ -13,7 +13,7 @@
     },
     "error": {
       "battery_unavailable": "Der ausgewählte Akku ist in der offiziellen Integration nicht mehr verfügbar. Prüfen Sie, ob er aktiviert und geladen ist, und versuchen Sie es erneut.",
-      "cannot_read_temperature": "Die Akkutemperatur konnte nicht gelesen werden. Prüfen Sie die Verbindung zum Akku und ob seine Firmware das Eingangsregister 10156 bereitstellt."
+      "cannot_read_measurements": "Es konnten keine Messwerte des Akkus gelesen werden. Prüfen Sie die lokale Modbus-Verbindung zum Akku und die Kompatibilität der Firmware."
     },
     "abort": {
       "already_configured": "Extras ist für diesen Akku bereits konfiguriert.",

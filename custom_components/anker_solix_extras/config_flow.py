@@ -15,7 +15,7 @@ from homeassistant.core import callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import selector
 
-from .client import AnkerSolixExtrasClient, TemperatureReadError
+from .client import AnkerSolixExtrasClient
 from .const import (
     CONF_ENABLE_OFF_GRID_OUTPUT_POWER,
     CONF_ENABLE_PUBLISHED_REGISTERS,
@@ -23,9 +23,8 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MODBUS_DEVICE_ID,
-    PUBLISHED_REGISTER_MODELS,
-    SOLARBANK_4_E5000_PRO,
 )
+from .measurements import async_read_measurements, published_input_registers
 from .source import async_get_batteries, async_get_battery
 
 
@@ -56,7 +55,7 @@ class AnkerSolixExtrasConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Select an official battery and validate the additional register."""
+        """Select an official battery and verify that Extras can read it."""
         errors: dict[str, str] = {}
         if user_input is not None:
             official_entry_id = user_input[CONF_OFFICIAL_ENTRY_ID]
@@ -70,9 +69,19 @@ class AnkerSolixExtrasConfigFlow(ConfigFlow, domain=DOMAIN):
                     async with async_get_temporary_unit(
                         self.hass, battery.modbus_params, MODBUS_DEVICE_ID
                     ) as unit:
-                        await AnkerSolixExtrasClient(unit).async_read_temperature()
-                except HomeAssistantError, TemperatureReadError:
-                    errors["base"] = "cannot_read_temperature"
+                        await async_read_measurements(
+                            AnkerSolixExtrasClient(unit),
+                            off_grid_output_power_enabled=(
+                                battery.enables_off_grid_output_by_default
+                            ),
+                            published_inputs=(
+                                published_input_registers(battery.pcs_count_addresses)
+                                if battery.supports_published_registers
+                                else None
+                            ),
+                        )
+                except HomeAssistantError:
+                    errors["base"] = "cannot_read_measurements"
                 else:
                     return self.async_create_entry(
                         title=battery.entry.title,
@@ -125,7 +134,7 @@ class AnkerSolixExtrasOptionsFlow(OptionsFlowWithReload):
         battery = async_get_battery(
             self.hass, self.config_entry.data[CONF_OFFICIAL_ENTRY_ID]
         )
-        if battery is not None and battery.device.model != SOLARBANK_4_E5000_PRO:
+        if battery is not None and not battery.enables_off_grid_output_by_default:
             schema = schema.extend(
                 {
                     vol.Optional(
@@ -134,10 +143,7 @@ class AnkerSolixExtrasOptionsFlow(OptionsFlowWithReload):
                     ): selector.BooleanSelector()
                 }
             )
-        if (
-            battery is not None
-            and battery.device.model not in PUBLISHED_REGISTER_MODELS
-        ):
+        if battery is not None and not battery.supports_published_registers:
             schema = schema.extend(
                 {
                     vol.Optional(

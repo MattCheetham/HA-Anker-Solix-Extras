@@ -15,12 +15,8 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .client import (
     AnkerSolixExtrasClient,
     BackupReserveError,
-    OffGridOutputPowerReadError,
-    PowerReadError,
     RegisterReadError,
     RegisterWriteError,
-    StateOfHealthReadError,
-    TemperatureReadError,
 )
 from .const import (
     CONF_ENABLE_OFF_GRID_OUTPUT_POWER,
@@ -28,26 +24,22 @@ from .const import (
     CONF_OFFICIAL_ENTRY_ID,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
-    ENERGY_ADDRESSES,
     EXPORT_LIMIT_ADDRESS,
     EXPORT_LIMIT_ENABLE_ADDRESS,
     MAX_EXPORT_LIMIT,
-    PCS_COUNT_ADDRESSES,
-    PUBLISHED_REGISTER_MODELS,
     RESERVE_ENABLE_ADDRESS,
-    SOLARBANK_4_E5000_PRO,
     SYSTEM_TIME_ADDRESS,
+)
+from .measurements import (
+    PUBLISHED_SETTINGS,
+    async_read_measurements,
+    async_read_published_setting,
+    published_input_registers,
 )
 from .models import BatteryMeasurements
 from .source import OfficialBattery, async_get_battery
 
 _LOGGER = logging.getLogger(__name__)
-
-_PUBLISHED_SETTINGS = {
-    SYSTEM_TIME_ADDRESS: (2, 946684800, 0xFFFFFFFF),
-    EXPORT_LIMIT_ENABLE_ADDRESS: (1, 0, 1),
-    EXPORT_LIMIT_ADDRESS: (2, 0, MAX_EXPORT_LIMIT),
-}
 
 
 class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
@@ -74,17 +66,17 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
         self.official_entry_id: str = entry.data[CONF_OFFICIAL_ENTRY_ID]
         self.device = battery.device
         self.published_registers_enabled = (
-            battery.device.model in PUBLISHED_REGISTER_MODELS
+            battery.supports_published_registers
             or entry.options.get(CONF_ENABLE_PUBLISHED_REGISTERS, False)
         )
-        self.pcs_count_addresses = PCS_COUNT_ADDRESSES.copy()
-        if battery.device.model == SOLARBANK_4_E5000_PRO:
-            self.pcs_count_addresses.pop("available_pcs_count")
-        self._published_inputs = {
-            address: 2 for address in ENERGY_ADDRESSES.values()
-        } | {address: 1 for address in self.pcs_count_addresses.values()}
+        self.pcs_count_addresses = battery.pcs_count_addresses
+        self._published_inputs = (
+            published_input_registers(self.pcs_count_addresses)
+            if self.published_registers_enabled
+            else None
+        )
         self.off_grid_output_power_enabled = (
-            battery.device.model == SOLARBANK_4_E5000_PRO
+            battery.enables_off_grid_output_by_default
             or entry.options.get(CONF_ENABLE_OFF_GRID_OUTPUT_POWER, False)
         )
         self._params = battery.modbus_params
@@ -108,89 +100,11 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
         """Poll without interleaving a control operation."""
         async with self._io_lock:
             self._check_linked_battery()
-            return await self._async_read_measurements(self._client)
-
-    async def _async_read_measurements(
-        self, client: AnkerSolixExtrasClient
-    ) -> BatteryMeasurements:
-        """Read independently available groups of battery values."""
-        temperature = None
-        power = None
-        plant_status = None
-        state_of_health = None
-        off_grid_output_power = None
-        backup_reserve = None
-        try:
-            temperature = await client.async_read_temperature()
-        except TemperatureReadError as err:
-            _LOGGER.debug("Temperature read failed: %s", err)
-        try:
-            plant_status, power = await client.async_read_status_and_power()
-        except PowerReadError as err:
-            _LOGGER.debug("Plant status and power read failed: %s", err)
-        try:
-            state_of_health = await client.async_read_state_of_health()
-        except StateOfHealthReadError as err:
-            _LOGGER.debug("State of health read failed: %s", err)
-        if self.off_grid_output_power_enabled:
-            try:
-                off_grid_output_power = await client.async_read_off_grid_output_power()
-            except OffGridOutputPowerReadError as err:
-                _LOGGER.debug("Off-grid output power read failed: %s", err)
-        try:
-            backup_reserve = await client.async_read_backup_reserve()
-        except BackupReserveError as err:
-            _LOGGER.debug("Backup reserve read failed: %s", err)
-        published_values = (
-            await self._async_read_published_values(client)
-            if self.published_registers_enabled
-            else {}
-        )
-        if not published_values and all(
-            reading is None
-            for reading in (
-                temperature,
-                power,
-                state_of_health,
-                off_grid_output_power,
-                backup_reserve,
+            return await async_read_measurements(
+                self._client,
+                off_grid_output_power_enabled=self.off_grid_output_power_enabled,
+                published_inputs=self._published_inputs,
             )
-        ):
-            raise UpdateFailed("Unable to read any battery measurements")
-        return BatteryMeasurements(
-            temperature=temperature,
-            power=power,
-            plant_status=plant_status,
-            state_of_health=state_of_health,
-            backup_reserve=backup_reserve,
-            off_grid_output_power=off_grid_output_power,
-            published_values=published_values,
-        )
-
-    async def _async_read_published_values(
-        self, client: AnkerSolixExtrasClient
-    ) -> dict[int, int]:
-        """Poll each documented value independently of unsupported neighbors."""
-        values = {}
-        for address, count in self._published_inputs.items():
-            try:
-                values[address] = await client.async_read_unsigned(address, count)
-            except RegisterReadError as err:
-                _LOGGER.debug("Published input read failed: %s", err)
-        for address in _PUBLISHED_SETTINGS:
-            try:
-                values[address] = await self._async_read_published_setting(address)
-            except RegisterReadError as err:
-                _LOGGER.debug("Published setting read failed: %s", err)
-        return values
-
-    async def _async_read_published_setting(self, address: int) -> int:
-        """Check that the device exposes the setting and returns a valid value."""
-        count, minimum, maximum = _PUBLISHED_SETTINGS[address]
-        value = await self._client.async_read_unsigned(address, count, holding=True)
-        if not minimum <= value <= maximum:
-            raise RegisterReadError(f"Invalid setting at register {address}")
-        return value
 
     async def async_set_export_limit_enabled(self, enabled: bool) -> None:
         """Set the export limit flag on the linked battery."""
@@ -219,7 +133,7 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
                 self._check_linked_battery()
                 if not self.published_registers_enabled:
                     raise RegisterReadError("Published registers are disabled")
-                await self._async_read_published_setting(address)
+                await async_read_published_setting(self._client, address)
                 self._check_linked_battery()
             except (UpdateFailed, RegisterReadError) as err:
                 self._publish_setting(address, None)
@@ -233,13 +147,13 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
             assert value is not None
             started = monotonic()
             try:
-                if _PUBLISHED_SETTINGS[address][0] == 1:
+                if PUBLISHED_SETTINGS[address][0] == 1:
                     await self._client.async_write_register(address, value)
                 else:
                     await self._client.async_write_registers(
                         address, [value >> 16, value & 0xFFFF]
                     )
-                updated = await self._async_read_published_setting(address)
+                updated = await async_read_published_setting(self._client, address)
             except (RegisterReadError, RegisterWriteError) as err:
                 self._publish_setting(address, None)
                 raise HomeAssistantError(
