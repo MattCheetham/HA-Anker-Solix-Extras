@@ -6,7 +6,7 @@ from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import EntityCategory
-from modbus_connection import ModbusTimeoutError
+from modbus_connection import IllegalDataAddressError, ModbusTimeoutError
 
 from custom_components.anker_solix_extras.client import (
     PowerReadError,
@@ -70,6 +70,7 @@ async def test_extras_entities_share_official_device(
         "battery_state_of_health",
         "plant_status",
         "backup_reserve",
+        *POWER_LIMIT_ADDRESSES,
     }
     off_grid_read = mock_client.return_value.async_read_off_grid_output_power
     if model == SOLARBANK_4_E5000_PRO:
@@ -78,7 +79,6 @@ async def test_extras_entities_share_official_device(
     else:
         off_grid_read.assert_not_awaited()
         expected.update(ENERGY_ADDRESSES)
-        expected.update(POWER_LIMIT_ADDRESSES)
         expected.update(PCS_COUNT_ADDRESSES)
         expected.update(
             {"system_time", "sync_system_time", "export_limit", "export_limit_enabled"}
@@ -136,6 +136,8 @@ async def test_plant_status_updates_from_input_register(
             if code is None:
                 raise ModbusTimeoutError("timeout")
             return [code, 0, 0, 0, 0, 0, 0xFFFF, 0xF66E, 0xFFFF, 0xF75E]
+        if address in (10036, 10038):
+            raise IllegalDataAddressError("Unsupported register")
         return {10156: [250], 10015: [100], 10233: [0, 23], 32775: [0]}[address]
 
     unit.read_input_registers.side_effect = read_input_registers
@@ -263,7 +265,7 @@ async def test_setup_with_one_measurement_unavailable(
     assert await hass.config_entries.async_setup(extras_entry.entry_id)
     await hass.async_block_till_done()
     entities = get_entities(hass, extras_entry)
-    assert len(entities) == 6
+    assert len(entities) == 8
     assert extras_entry.state is ConfigEntryState.LOADED
     assert hass.states.get(entities["battery_temperature"].entity_id).state == (
         STATE_UNAVAILABLE if failed == "temperature" else "25.0"
@@ -340,7 +342,7 @@ async def test_upgrade_preserves_existing_temperature_entity(
     entities = get_entities(hass, extras_entry)
     assert entities["battery_temperature"].entity_id == original.entity_id
     assert entities["battery_temperature"].name == "My temperature"
-    assert len(entities) == 6
+    assert len(entities) == 8
 
 
 async def test_sources_update_when_estimate_is_unchanged(

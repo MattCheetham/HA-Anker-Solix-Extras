@@ -77,7 +77,7 @@ async def test_choose_official_battery(
             "4.2",
         ),
         (
-            "Anker SOLIX Solarbank Max AC",
+            SOLARBANK_4_E5000_PRO,
             10036,
             [0, 1200],
             "rechargeable_power",

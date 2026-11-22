@@ -98,15 +98,17 @@ async def async_setup_entry(
         AnkerSolixBatteryStateOfHealth(coordinator),
         AnkerSolixPlantStatus(coordinator),
     ]
+    entities.extend(
+        AnkerSolixPublishedSensor(coordinator, key, address)
+        for key, address in POWER_LIMIT_ADDRESSES.items()
+    )
     if coordinator.off_grid_output_power_enabled:
         entities.append(AnkerSolixOffGridOutputPower(coordinator))
     if coordinator.published_registers_enabled:
         entities.extend(
             AnkerSolixPublishedSensor(coordinator, key, address)
             for key, address in (
-                ENERGY_ADDRESSES
-                | POWER_LIMIT_ADDRESSES
-                | coordinator.pcs_count_addresses
+                ENERGY_ADDRESSES | coordinator.pcs_count_addresses
             ).items()
         )
         entities.append(

@@ -21,15 +21,25 @@ from custom_components.anker_solix_extras.const import (
 async def test_published_registers_beta_option(
     hass, extras_entry, official_entry, mock_client
 ) -> None:
-    """Opt in on the E5000 Pro and stop polling after opting out."""
+    """Keep power sensors active with or without the E5000 Pro beta option."""
+    client = mock_client.return_value
+    client.async_read_int32.side_effect = None
+    client.async_read_int32.return_value = 1200
     assert await hass.config_entries.async_setup(extras_entry.entry_id)
     await hass.async_block_till_done()
-    client = mock_client.return_value
     registry = er.async_get(hass)
     unique_id = f"{official_entry.entry_id}_pcs_count"
     client.async_read_unsigned.assert_not_awaited()
-    client.async_read_int32.assert_not_awaited()
+    assert client.async_read_int32.await_args_list == [call(10036), call(10038)]
     assert registry.async_get_entity_id("sensor", DOMAIN, unique_id) is None
+    power_ids = [
+        registry.async_get_entity_id(
+            "sensor", DOMAIN, f"{official_entry.entry_id}_{key}"
+        )
+        for key in ("rechargeable_power", "dischargeable_power")
+    ]
+    for entity_id in power_ids:
+        assert hass.states.get(entity_id).state == "1200"
 
     async def set_beta_option(enabled: bool) -> None:
         flow = await hass.config_entries.options.async_init(extras_entry.entry_id)
@@ -82,7 +92,9 @@ async def test_published_registers_beta_option(
     client.async_read_int32.reset_mock()
     await set_beta_option(False)
     client.async_read_unsigned.assert_not_awaited()
-    client.async_read_int32.assert_not_awaited()
+    assert client.async_read_int32.await_args_list == [call(10036), call(10038)]
+    for entity_id in power_ids:
+        assert hass.states.get(entity_id).state == "1200"
     state = hass.states.get(sensor_id)
     assert state is None or state.state == STATE_UNAVAILABLE
     client.async_write_register.assert_not_awaited()

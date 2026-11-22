@@ -32,18 +32,12 @@ PUBLISHED_SETTINGS = {
 }
 
 
-def published_input_registers(pcs_count_addresses: dict[str, int]) -> dict[int, int]:
-    """Return published input register addresses and their word counts."""
-    return {
-        address: 2 for address in (ENERGY_ADDRESSES | POWER_LIMIT_ADDRESSES).values()
-    } | {address: 1 for address in pcs_count_addresses.values()}
-
-
 async def async_read_measurements(
     client: AnkerSolixExtrasClient,
     *,
     off_grid_output_power_enabled: bool,
-    published_inputs: dict[int, int] | None,
+    published_registers_enabled: bool,
+    pcs_count_addresses: dict[str, int],
     published_addresses: set[int] | None = None,
 ) -> BatteryMeasurements:
     """Read independently available groups of battery values."""
@@ -74,12 +68,8 @@ async def async_read_measurements(
         backup_reserve = await client.async_read_backup_reserve()
     except BackupReserveError as err:
         _LOGGER.debug("Backup reserve read failed: %s", err)
-    published_values = (
-        await _async_read_published_values(
-            client, published_inputs, published_addresses
-        )
-        if published_inputs is not None
-        else {}
+    published_values = await _async_read_published_values(
+        client, published_registers_enabled, pcs_count_addresses, published_addresses
     )
     if not published_values and all(
         reading is None
@@ -105,10 +95,15 @@ async def async_read_measurements(
 
 async def _async_read_published_values(
     client: AnkerSolixExtrasClient,
-    inputs: dict[int, int],
+    published_registers_enabled: bool,
+    pcs_count_addresses: dict[str, int],
     addresses: set[int] | None,
 ) -> dict[int, int]:
     """Poll requested values independently of unsupported neighbors."""
+    inputs = {address: 2 for address in POWER_LIMIT_ADDRESSES.values()}
+    if published_registers_enabled:
+        inputs.update(dict.fromkeys(ENERGY_ADDRESSES.values(), 2))
+        inputs.update(dict.fromkeys(pcs_count_addresses.values(), 1))
     values = {}
     for address, count in inputs.items():
         if addresses is not None and address not in addresses:
@@ -120,6 +115,8 @@ async def _async_read_published_values(
                 values[address] = await client.async_read_unsigned(address, count)
         except RegisterReadError as err:
             _LOGGER.debug("Published input read failed: %s", err)
+    if not published_registers_enabled:
+        return values
     for address in PUBLISHED_SETTINGS:
         if addresses is not None and address not in addresses:
             continue
