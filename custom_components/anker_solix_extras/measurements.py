@@ -43,6 +43,7 @@ async def async_read_measurements(
     *,
     off_grid_output_power_enabled: bool,
     published_inputs: dict[int, int] | None,
+    published_addresses: set[int] | None = None,
 ) -> BatteryMeasurements:
     """Read independently available groups of battery values."""
     temperature = None
@@ -73,7 +74,9 @@ async def async_read_measurements(
     except BackupReserveError as err:
         _LOGGER.debug("Backup reserve read failed: %s", err)
     published_values = (
-        await _async_read_published_values(client, published_inputs)
+        await _async_read_published_values(
+            client, published_inputs, published_addresses
+        )
         if published_inputs is not None
         else {}
     )
@@ -100,16 +103,22 @@ async def async_read_measurements(
 
 
 async def _async_read_published_values(
-    client: AnkerSolixExtrasClient, inputs: dict[int, int]
+    client: AnkerSolixExtrasClient,
+    inputs: dict[int, int],
+    addresses: set[int] | None,
 ) -> dict[int, int]:
-    """Poll each documented value independently of unsupported neighbors."""
+    """Poll requested values independently of unsupported neighbors."""
     values = {}
     for address, count in inputs.items():
+        if addresses is not None and address not in addresses:
+            continue
         try:
             values[address] = await client.async_read_unsigned(address, count)
         except RegisterReadError as err:
             _LOGGER.debug("Published input read failed: %s", err)
     for address in PUBLISHED_SETTINGS:
+        if addresses is not None and address not in addresses:
+            continue
         try:
             values[address] = await async_read_published_setting(client, address)
         except RegisterReadError as err:

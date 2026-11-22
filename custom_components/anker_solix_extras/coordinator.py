@@ -104,6 +104,10 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
                 self._client,
                 off_grid_output_power_enabled=self.off_grid_output_power_enabled,
                 published_inputs=self._published_inputs,
+                # Entities subscribe only after the first refresh.
+                published_addresses=(
+                    None if self.data is None else set(self.async_contexts())
+                ),
             )
 
     async def async_set_export_limit_enabled(self, enabled: bool) -> None:
