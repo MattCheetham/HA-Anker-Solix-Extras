@@ -1,5 +1,7 @@
 """Verify the documented register entities through the real HA setup."""
 
+from unittest.mock import call
+
 import pytest
 from homeassistant.const import CONF_SCAN_INTERVAL, STATE_UNAVAILABLE
 from homeassistant.data_entry_flow import FlowResultType
@@ -128,6 +130,14 @@ async def test_published_registers(
     await hass.async_block_till_done()
     registry = er.async_get(hass)
 
+    unit.read_input_registers.reset_mock()
+    unit.read_holding_registers.reset_mock()
+    await extras_entry.runtime_data.async_refresh()
+    assert call(10022, 2) in unit.read_input_registers.await_args_list
+    assert call(10040, 1) not in unit.read_input_registers.await_args_list
+    assert call(10041, 1) not in unit.read_input_registers.await_args_list
+    unit.read_holding_registers.assert_not_awaited()
+
     def entity_id(platform, key):
         return registry.async_get_entity_id(
             platform, DOMAIN, f"{official_entry.entry_id}_{key}"
@@ -176,8 +186,14 @@ async def test_published_registers(
     for key, value in diagnostics.items():
         assert hass.states.get(entity_id("sensor", key)).state == value
 
+    unit.read_holding_registers.reset_mock()
     inputs.pop(10024)
     await coordinator.async_refresh()
+    assert unit.read_holding_registers.await_args_list == [
+        call(10060, 2),  # The clock sensor and button share a single read.
+        call(10074, 1),
+        call(10075, 2),
+    ]
     assert (
         hass.states.get(entity_id("sensor", "total_battery_discharge_energy")).state
         == STATE_UNAVAILABLE

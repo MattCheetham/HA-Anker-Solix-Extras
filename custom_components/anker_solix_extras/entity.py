@@ -12,7 +12,7 @@ class PublishedRegisterEntity(CoordinatorEntity[AnkerSolixExtrasCoordinator]):
 
     def __init__(self, coordinator: AnkerSolixExtrasCoordinator, address: int) -> None:
         """Bind the entity to its register without changing the device registry."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, context=address)
         self._address = address
         self._attr_unique_id = (
             f"{coordinator.official_entry_id}_{self.entity_description.key}"
