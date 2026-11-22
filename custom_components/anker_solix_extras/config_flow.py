@@ -24,7 +24,7 @@ from .const import (
     DOMAIN,
     MODBUS_DEVICE_ID,
 )
-from .measurements import async_read_measurements, published_input_registers
+from .measurements import async_read_measurements
 from .source import async_get_batteries, async_get_battery
 
 
@@ -74,11 +74,8 @@ class AnkerSolixExtrasConfigFlow(ConfigFlow, domain=DOMAIN):
                             off_grid_output_power_enabled=(
                                 battery.enables_off_grid_output_by_default
                             ),
-                            published_inputs=(
-                                published_input_registers(battery.pcs_count_addresses)
-                                if battery.supports_published_registers
-                                else None
-                            ),
+                            published_registers_enabled=battery.supports_published_registers,
+                            pcs_count_addresses=battery.pcs_count_addresses,
                         )
                 except HomeAssistantError:
                     errors["base"] = "cannot_read_measurements"

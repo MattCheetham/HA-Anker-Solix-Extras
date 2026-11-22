@@ -2,7 +2,7 @@
 
 from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.helpers import entity_registry as er
-from modbus_connection import ModbusTimeoutError
+from modbus_connection import IllegalDataAddressError, ModbusTimeoutError
 
 
 async def test_off_grid_output_power_states(
@@ -18,6 +18,8 @@ async def test_off_grid_output_power_states(
             if reading is None:
                 raise ModbusTimeoutError("timeout")
             return reading
+        if address in (10036, 10038):
+            raise IllegalDataAddressError("Unsupported register")
         return {
             10000: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             10015: [100],

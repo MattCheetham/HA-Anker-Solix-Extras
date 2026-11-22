@@ -31,7 +31,7 @@ def get_temperature(hass, extras_entry):
     entities = er.async_entries_for_config_entry(
         er.async_get(hass), extras_entry.entry_id
     )
-    assert len(entities) == 6
+    assert len(entities) == 8
     return next(
         entity
         for entity in entities

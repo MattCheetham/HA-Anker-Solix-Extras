@@ -34,7 +34,6 @@ from .measurements import (
     PUBLISHED_SETTINGS,
     async_read_measurements,
     async_read_published_setting,
-    published_input_registers,
 )
 from .models import BatteryMeasurements
 from .source import OfficialBattery, async_get_battery
@@ -70,11 +69,6 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
             or entry.options.get(CONF_ENABLE_PUBLISHED_REGISTERS, False)
         )
         self.pcs_count_addresses = battery.pcs_count_addresses
-        self._published_inputs = (
-            published_input_registers(self.pcs_count_addresses)
-            if self.published_registers_enabled
-            else None
-        )
         self.off_grid_output_power_enabled = (
             battery.enables_off_grid_output_by_default
             or entry.options.get(CONF_ENABLE_OFF_GRID_OUTPUT_POWER, False)
@@ -104,7 +98,8 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
             return await async_read_measurements(
                 self._client,
                 off_grid_output_power_enabled=self.off_grid_output_power_enabled,
-                published_inputs=self._published_inputs,
+                published_registers_enabled=self.published_registers_enabled,
+                pcs_count_addresses=self.pcs_count_addresses,
                 # Entities subscribe only after the first refresh.
                 published_addresses=(
                     None if self.data is None else set(self.async_contexts())
