@@ -1,16 +1,20 @@
 """Exercise the backup reserve switch through Home Assistant services."""
 
+from datetime import timedelta
 from unittest.mock import call
 
 import pytest
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
+from homeassistant.util import dt as dt_util
 
 from custom_components.anker_solix_extras.client import (
     BackupReserveError,
     RegisterWriteError,
 )
+
+from .ha import async_fire_time_changed
 
 
 @pytest.fixture
@@ -49,6 +53,31 @@ async def test_reserve_actions_confirm_state_and_share_the_official_device(
         call(60003, 1),
         call(60003, 0),
     ]
+
+
+async def test_control_readbacks_keep_the_next_poll_scheduled(
+    hass, freezer, mock_client, reserve_switch
+) -> None:
+    """Repeated control calls must leave the original sensor refresh in place."""
+    client = mock_client.return_value
+    client.async_read_temperature.reset_mock()
+
+    async def write_register(_address, value):
+        client.async_read_backup_reserve.return_value = bool(value)
+
+    client.async_write_register.side_effect = write_register
+    target = {"entity_id": reserve_switch.entity_id}
+    for action, expected in (("turn_on", STATE_ON), ("turn_off", STATE_OFF)):
+        freezer.tick(timedelta(seconds=4))
+        async_fire_time_changed(hass, dt_util.utcnow())
+        await hass.services.async_call("switch", action, target, blocking=True)
+        assert hass.states.get(reserve_switch.entity_id).state == expected
+    client.async_read_temperature.assert_not_awaited()
+
+    freezer.tick(timedelta(seconds=3))
+    async_fire_time_changed(hass, dt_util.utcnow())
+    await hass.async_block_till_done()
+    client.async_read_temperature.assert_awaited_once()
 
 
 async def test_switch_checks_fresh_capability(
