@@ -28,7 +28,7 @@
   unavailable.
 - Heating is an experimental estimate: decode signed INT32 AC/battery power from
   input registers 10006–10009 together, high word first. When AC is negative,
-  use max(battery - AC, 0); otherwise zero. Activity is strictly estimate > 0.
+  use max(battery - AC, 0); otherwise zero.
 - Do not read or use load power for this estimate. Do not introduce a deadband,
   absolute difference, or undocumented correction without explicit agreement.
 - Polling defaults to 10 seconds per battery, configured through scan_interval
@@ -38,9 +38,6 @@
   attributes or interpret read failures as zero/off. Preserve temperature IDs.
 - Heating compatibility is inferred for the supported models, not hardware-tested.
   Keep the README clear that losses and other consumption may affect the estimate.
-- Heating activity uses a generic binary sensor with a radiator icon so its
-  states display as On/Off. The Heat device class means Hot/Normal, not whether
-  the battery heater is active.
 
 ## Development
 

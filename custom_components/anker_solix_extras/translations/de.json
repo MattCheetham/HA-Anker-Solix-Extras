@@ -76,11 +76,6 @@
         "name": "Einspeisebegrenzung"
       }
     },
-    "binary_sensor": {
-      "battery_heating_active": {
-        "name": "Akkuheizung aktiv"
-      }
-    },
     "number": {
       "export_limit": {
         "name": "Einspeiseleistungsgrenze"
