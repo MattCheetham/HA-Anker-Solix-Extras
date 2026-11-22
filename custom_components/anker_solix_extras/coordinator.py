@@ -92,6 +92,7 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
         if (
             battery is None
             or battery.device.id != self.device.id
+            or battery.device.model != self.device.model
             or battery.modbus_params != self._params
         ):
             raise UpdateFailed("The linked official battery is unavailable")
