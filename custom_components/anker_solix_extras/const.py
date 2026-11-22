@@ -35,6 +35,10 @@ ENERGY_ADDRESSES = {
     "total_grid_import_energy": 10030,
     "total_grid_export_energy": 10034,
 }
+POWER_LIMIT_ADDRESSES = {
+    "rechargeable_power": 10036,
+    "dischargeable_power": 10038,
+}
 PCS_COUNT_ADDRESSES = {"pcs_count": 10040, "available_pcs_count": 10041}
 SYSTEM_TIME_ADDRESS = 10060
 EXPORT_LIMIT_ENABLE_ADDRESS = 10074

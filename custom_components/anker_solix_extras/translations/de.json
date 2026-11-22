@@ -43,6 +43,12 @@
       "off_grid_output_power": {
         "name": "Inselbetrieb-Ausgangsleistung"
       },
+      "rechargeable_power": {
+        "name": "Verfügbare Ladeleistung"
+      },
+      "dischargeable_power": {
+        "name": "Verfügbare Entladeleistung"
+      },
       "total_battery_charge_energy": {
         "name": "Gesamte Batterieladeenergie"
       },
@@ -116,7 +122,7 @@
         },
         "data_description": {
           "enable_off_grid_output_power": "Zum Testen auf diesem Modell. Messwerte können fehlen oder ungenau sein.",
-          "enable_published_registers": "Teste EnergiezÃ¤hler, PCS-Anzahlen, Systemzeit und Einspeisebegrenzung auf diesem Modell. Register kÃ¶nnen fehlen oder sich anders verhalten."
+          "enable_published_registers": "Teste zusätzliche Modbus-Entitäten der Anlage auf diesem Modell. Register können fehlen oder sich anders verhalten."
         }
       }
     }

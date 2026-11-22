@@ -17,6 +17,7 @@ from custom_components.anker_solix_extras.const import (
     DOMAIN,
     ENERGY_ADDRESSES,
     PCS_COUNT_ADDRESSES,
+    POWER_LIMIT_ADDRESSES,
     SOLARBANK_4_E5000_PRO,
     SUPPORTED_MODELS,
 )
@@ -77,6 +78,7 @@ async def test_extras_entities_share_official_device(
     else:
         off_grid_read.assert_not_awaited()
         expected.update(ENERGY_ADDRESSES)
+        expected.update(POWER_LIMIT_ADDRESSES)
         expected.update(PCS_COUNT_ADDRESSES)
         expected.update(
             {"system_time", "sync_system_time", "export_limit", "export_limit_enabled"}

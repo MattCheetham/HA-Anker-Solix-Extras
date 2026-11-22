@@ -43,6 +43,12 @@
       "off_grid_output_power": {
         "name": "Off-Grid Output Power"
       },
+      "rechargeable_power": {
+        "name": "Rechargeable Power"
+      },
+      "dischargeable_power": {
+        "name": "Dischargeable Power"
+      },
       "total_battery_charge_energy": {
         "name": "Total Battery Charge Energy"
       },
@@ -116,7 +122,7 @@
         },
         "data_description": {
           "enable_off_grid_output_power": "For testing on this model. Readings may be unavailable or inaccurate.",
-          "enable_published_registers": "Test plant energy totals, PCS counts, system time, and export limits on this model. Registers may be unavailable or behave differently."
+          "enable_published_registers": "Try additional plant Modbus entities on this model. Registers may be unavailable or behave differently."
         }
       }
     }

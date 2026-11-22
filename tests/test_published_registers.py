@@ -28,6 +28,7 @@ async def test_published_registers_beta_option(
     registry = er.async_get(hass)
     unique_id = f"{official_entry.entry_id}_pcs_count"
     client.async_read_unsigned.assert_not_awaited()
+    client.async_read_int32.assert_not_awaited()
     assert registry.async_get_entity_id("sensor", DOMAIN, unique_id) is None
 
     async def set_beta_option(enabled: bool) -> None:
@@ -46,6 +47,8 @@ async def test_published_registers_beta_option(
 
     await set_beta_option(True)
     client.async_read_unsigned.assert_any_await(10040, 1)
+    client.async_read_int32.assert_any_await(10036)
+    client.async_read_int32.assert_any_await(10038)
     assert all(
         call.args[0] != 10041 for call in client.async_read_unsigned.await_args_list
     )
@@ -76,8 +79,10 @@ async def test_published_registers_beta_option(
     assert registry.async_get(previous_sensor.entity_id) is None
 
     client.async_read_unsigned.reset_mock()
+    client.async_read_int32.reset_mock()
     await set_beta_option(False)
     client.async_read_unsigned.assert_not_awaited()
+    client.async_read_int32.assert_not_awaited()
     state = hass.states.get(sensor_id)
     assert state is None or state.state == STATE_UNAVAILABLE
     client.async_write_register.assert_not_awaited()
@@ -100,6 +105,8 @@ async def test_published_registers(
         10026: [0, 0],
         10030: [0, 45],
         10034: [0, 67],
+        10036: [0xFFFF, 0xFB50],
+        10038: [0, 1800],
         10040: [2],
         10041: [1],
         10156: [250],
@@ -134,6 +141,8 @@ async def test_published_registers(
     unit.read_holding_registers.reset_mock()
     await extras_entry.runtime_data.async_refresh()
     assert call(10022, 2) in unit.read_input_registers.await_args_list
+    assert call(10036, 2) in unit.read_input_registers.await_args_list
+    assert call(10038, 2) in unit.read_input_registers.await_args_list
     assert call(10040, 1) not in unit.read_input_registers.await_args_list
     assert call(10041, 1) not in unit.read_input_registers.await_args_list
     unit.read_holding_registers.assert_not_awaited()
@@ -154,6 +163,18 @@ async def test_published_registers(
         sensor = entity_id("sensor", key)
         assert registry.async_get(sensor).device_id == device.id
         assert hass.states.get(sensor).state == value
+    rechargeable = entity_id("sensor", "rechargeable_power")
+    dischargeable = entity_id("sensor", "dischargeable_power")
+    for sensor, value in ((rechargeable, "-1200"), (dischargeable, "1800")):
+        entry = registry.async_get(sensor)
+        assert entry.device_id == device.id
+        assert entry.entity_category is None
+        assert not entry.disabled
+        state = hass.states.get(sensor)
+        assert state.state == value
+        assert state.attributes["unit_of_measurement"] == "W"
+        assert state.attributes["device_class"] == "power"
+        assert state.attributes["state_class"] == "measurement"
     diagnostics = {
         "pcs_count": "2",
         "available_pcs_count": "1",
@@ -188,6 +209,7 @@ async def test_published_registers(
 
     unit.read_holding_registers.reset_mock()
     inputs.pop(10024)
+    inputs.pop(10036)
     await coordinator.async_refresh()
     assert unit.read_holding_registers.await_args_list == [
         call(10060, 2),  # The clock sensor and button share a single read.
@@ -199,6 +221,11 @@ async def test_published_registers(
         == STATE_UNAVAILABLE
     )
     assert hass.states.get(entity_id("sensor", "pcs_count")).state == "2"
+    assert hass.states.get(rechargeable).state == STATE_UNAVAILABLE
+    assert hass.states.get(dischargeable).state == "1800"
+    inputs[10036] = [0, 0]
+    await coordinator.async_refresh()
+    assert hass.states.get(rechargeable).state == "0"
 
     await hass.services.async_call(
         "switch", "turn_on", {"entity_id": controls["switch"]}, blocking=True

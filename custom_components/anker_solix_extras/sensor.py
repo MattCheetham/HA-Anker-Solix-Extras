@@ -19,6 +19,7 @@ from . import AnkerSolixExtrasConfigEntry
 from .const import (
     ENERGY_ADDRESSES,
     PLANT_STATUS_STATES,
+    POWER_LIMIT_ADDRESSES,
     SYSTEM_TIME_ADDRESS,
 )
 from .coordinator import AnkerSolixExtrasCoordinator
@@ -103,7 +104,9 @@ async def async_setup_entry(
         entities.extend(
             AnkerSolixPublishedSensor(coordinator, key, address)
             for key, address in (
-                ENERGY_ADDRESSES | coordinator.pcs_count_addresses
+                ENERGY_ADDRESSES
+                | POWER_LIMIT_ADDRESSES
+                | coordinator.pcs_count_addresses
             ).items()
         )
         entities.append(
@@ -113,7 +116,7 @@ async def async_setup_entry(
 
 
 class AnkerSolixPublishedSensor(PublishedRegisterEntity, SensorEntity):
-    """Expose a published energy counter, PCS count, or timestamp."""
+    """Expose a published energy counter, power limit, PCS count, or timestamp."""
 
     def __init__(
         self, coordinator: AnkerSolixExtrasCoordinator, key: str, address: int
@@ -128,6 +131,15 @@ class AnkerSolixPublishedSensor(PublishedRegisterEntity, SensorEntity):
                 native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
                 state_class=SensorStateClass.TOTAL_INCREASING,
                 suggested_display_precision=1,
+            )
+        elif key in POWER_LIMIT_ADDRESSES:
+            self.entity_description = SensorEntityDescription(
+                key=key,
+                translation_key=key,
+                device_class=SensorDeviceClass.POWER,
+                native_unit_of_measurement=UnitOfPower.WATT,
+                state_class=SensorStateClass.MEASUREMENT,
+                suggested_display_precision=0,
             )
         else:
             self.entity_description = SensorEntityDescription(

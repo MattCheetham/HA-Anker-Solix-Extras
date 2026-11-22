@@ -43,6 +43,12 @@
       "off_grid_output_power": {
         "name": "Puissance de sortie hors réseau"
       },
+      "rechargeable_power": {
+        "name": "Puissance de charge disponible"
+      },
+      "dischargeable_power": {
+        "name": "Puissance de décharge disponible"
+      },
       "total_battery_charge_energy": {
         "name": "Ã‰nergie totale de charge de la batterie"
       },
@@ -116,7 +122,7 @@
         },
         "data_description": {
           "enable_off_grid_output_power": "Pour tester ce modèle. Les mesures peuvent être indisponibles ou imprécises.",
-          "enable_published_registers": "Testez les compteurs dâ€™Ã©nergie, le nombre de PCS, lâ€™heure systÃ¨me et la limitation de lâ€™injection sur ce modÃ¨le. Certains registres peuvent Ãªtre indisponibles ou se comporter diffÃ©remment."
+          "enable_published_registers": "Testez des entités Modbus supplémentaires de l’installation sur ce modèle. Certains registres peuvent être indisponibles ou se comporter différemment."
         }
       }
     }

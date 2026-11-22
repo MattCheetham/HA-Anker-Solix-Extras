@@ -100,6 +100,9 @@ def mock_client(mock_connection) -> Generator[MagicMock]:
         client.async_read_unsigned = AsyncMock(
             side_effect=RegisterReadError("Unsupported register")
         )
+        client.async_read_int32 = AsyncMock(
+            side_effect=RegisterReadError("Unsupported register")
+        )
         yield factory
 
 
