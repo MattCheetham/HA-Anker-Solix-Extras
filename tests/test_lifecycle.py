@@ -7,8 +7,10 @@ from homeassistant.components.modbus import async_get_unit
 from homeassistant.components.modbus.connection import async_get_connection_info
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import STATE_UNAVAILABLE
+from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import label_registry as lr
 from homeassistant.util import dt as dt_util
 from modbus_connection import ModbusTcpParams
 
@@ -194,6 +196,56 @@ async def test_source_removal_does_not_create_a_replacement_device(
         or hass.states.get(entity.entity_id).state == STATE_UNAVAILABLE
     )
     assert extras_entry.state is ConfigEntryState.SETUP_RETRY
+
+
+async def test_device_metadata_changes_keep_extras_loaded(
+    hass, extras_entry, mock_client
+) -> None:
+    """Home Assistant can update names, areas, and labels without another poll."""
+    assert await hass.config_entries.async_setup(extras_entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = extras_entry.runtime_data
+    entity = get_temperature(hass, extras_entry)
+    mock_client.return_value.async_read_temperature.reset_mock()
+    area = ar.async_get(hass).async_create("Utility Room")
+    label = lr.async_get(hass).async_create("Energy")
+
+    dr.async_get(hass).async_update_device(
+        coordinator.device.id,
+        area_id=area.id,
+        labels={label.label_id},
+        name_by_user="Renamed Battery",
+    )
+    await hass.async_block_till_done()
+
+    assert extras_entry.runtime_data is coordinator
+    assert (
+        hass.states.get(entity.entity_id).name == "Renamed Battery Battery Temperature"
+    )
+    mock_client.return_value.async_read_temperature.assert_not_awaited()
+
+
+async def test_device_model_change_reloads_extras(
+    hass, official_entry, extras_entry, mock_client
+) -> None:
+    """Reevaluate model-specific registers while keeping shared entity identity."""
+    assert await hass.config_entries.async_setup(extras_entry.entry_id)
+    await hass.async_block_till_done()
+    before = extras_entry.runtime_data
+    assert not before.published_registers_enabled
+    entity = get_temperature(hass, extras_entry)
+
+    dr.async_get(hass).async_update_device(
+        before.device.id, model="Anker SOLIX Solarbank Max AC"
+    )
+    await hass.async_block_till_done()
+
+    after = extras_entry.runtime_data
+    assert after is not before
+    assert after.published_registers_enabled
+    assert not after.off_grid_output_power_enabled
+    assert er.async_get(hass).async_get(entity.entity_id).device_id == entity.device_id
+    assert official_entry.state is ConfigEntryState.LOADED
 
 
 async def test_address_change_while_source_unloaded_recovers_on_retry(

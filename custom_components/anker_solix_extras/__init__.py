@@ -3,7 +3,7 @@
 from homeassistant.components.modbus import async_get_unit
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import Event, HomeAssistant
+from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.exceptions import (
     ConfigEntryError,
     ConfigEntryNotReady,
@@ -11,6 +11,7 @@ from homeassistant.exceptions import (
 )
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.event import async_track_device_registry_updated_event
 
 from .client import AnkerSolixExtrasClient
 from .const import CONF_OFFICIAL_ENTRY_ID, DOMAIN, MODBUS_DEVICE_ID
@@ -76,15 +77,24 @@ async def async_setup_entry(
         ):
             registry.async_remove(retired_entity_id)
 
-    async def async_device_updated(
+    @callback
+    def async_device_updated(
         event: Event[dr.EventDeviceRegistryUpdatedData],
     ) -> None:
-        """Reload Extras if its linked device was removed or changed."""
-        if event.data["device_id"] == coordinator.device.id:
-            await hass.config_entries.async_reload(entry.entry_id)
+        """Reload Extras when the linked device or its supported features change."""
+        current = async_get_battery(hass, coordinator.official_entry_id)
+        if (
+            event.data["action"] == "remove"
+            or current is None
+            or current.device.id != coordinator.device.id
+            or current.device.model != coordinator.device.model
+        ):
+            hass.config_entries.async_schedule_reload(entry.entry_id)
 
     entry.async_on_unload(
-        hass.bus.async_listen(dr.EVENT_DEVICE_REGISTRY_UPDATED, async_device_updated)
+        async_track_device_registry_updated_event(
+            hass, coordinator.device.id, async_device_updated
+        )
     )
     return True
 
