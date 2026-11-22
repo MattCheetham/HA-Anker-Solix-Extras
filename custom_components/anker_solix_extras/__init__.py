@@ -10,9 +10,10 @@ from homeassistant.exceptions import (
     HomeAssistantError,
 )
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 
 from .client import AnkerSolixExtrasClient
-from .const import CONF_OFFICIAL_ENTRY_ID, MODBUS_DEVICE_ID
+from .const import CONF_OFFICIAL_ENTRY_ID, DOMAIN, MODBUS_DEVICE_ID
 from .coordinator import AnkerSolixExtrasCoordinator
 from .source import async_get_battery
 
@@ -20,7 +21,6 @@ type AnkerSolixExtrasConfigEntry = ConfigEntry[AnkerSolixExtrasCoordinator]
 
 PLATFORMS = [
     Platform.SENSOR,
-    Platform.BINARY_SENSOR,
     Platform.SWITCH,
     Platform.NUMBER,
     Platform.BUTTON,
@@ -60,6 +60,21 @@ async def async_setup_entry(
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # Remove the legacy entity even if its entity ID was changed by the user.
+    registry = er.async_get(hass)
+    retired_entity_id = registry.async_get_entity_id(
+        Platform.BINARY_SENSOR,
+        DOMAIN,
+        f"{coordinator.official_entry_id}_battery_heating_active",
+    )
+    if retired_entity_id is not None:
+        retired_entity = registry.async_get(retired_entity_id)
+        if (
+            retired_entity is not None
+            and retired_entity.config_entry_id == entry.entry_id
+        ):
+            registry.async_remove(retired_entity_id)
 
     async def async_device_updated(
         event: Event[dr.EventDeviceRegistryUpdatedData],

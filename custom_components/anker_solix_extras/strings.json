@@ -76,11 +76,6 @@
         "name": "Export Power Limitation"
       }
     },
-    "binary_sensor": {
-      "battery_heating_active": {
-        "name": "Battery Heating Active"
-      }
-    },
     "number": {
       "export_limit": {
         "name": "Export Power Limit"

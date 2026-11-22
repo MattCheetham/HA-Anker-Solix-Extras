@@ -76,11 +76,6 @@
         "name": "Limitation de lâ€™injection"
       }
     },
-    "binary_sensor": {
-      "battery_heating_active": {
-        "name": "Chauffage de la batterie actif"
-      }
-    },
     "number": {
       "export_limit": {
         "name": "Limite de puissance dâ€™injection"

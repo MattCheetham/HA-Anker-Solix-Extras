@@ -7,9 +7,6 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from modbus_connection import ModbusTimeoutError
 
-from custom_components.anker_solix_extras.binary_sensor import (
-    AnkerSolixBatteryHeatingActive,
-)
 from custom_components.anker_solix_extras.client import (
     PowerReadError,
     StateOfHealthReadError,
@@ -68,7 +65,6 @@ async def test_extras_entities_share_official_device(
     expected = {
         "battery_temperature",
         "battery_heating_power",
-        "battery_heating_active",
         "battery_state_of_health",
         "plant_status",
         "backup_reserve",
@@ -105,12 +101,6 @@ async def test_extras_entities_share_official_device(
     assert state.attributes["ac_power"] == -2450
     assert state.attributes["battery_power"] == -2210
     assert power.options["sensor"]["suggested_display_precision"] == 0
-    active = hass.states.get(entities["battery_heating_active"].entity_id)
-    assert active.state == "on"
-    assert active.name.endswith("Battery Heating Active")
-    assert "device_class" not in active.attributes
-    assert active.attributes["icon"] == "mdi:radiator"
-    assert "unit_of_measurement" not in active.attributes
 
     status = hass.states.get(entities["plant_status"].entity_id)
     assert status.state == "on_grid"
@@ -204,13 +194,13 @@ async def test_state_of_health_updates_and_independent_failures(
 async def test_heating_updates_and_independent_failures(
     hass, extras_entry, mock_client
 ) -> None:
-    """Clear stale data on partial failures and recover both heating entities."""
+    """Clear stale data on partial failures and recover both measurements."""
     assert await hass.config_entries.async_setup(extras_entry.entry_id)
     await hass.async_block_till_done()
     entities = get_entities(hass, extras_entry)
     client = mock_client.return_value
 
-    async def check(temperature, power, active):
+    async def check(temperature, power):
         await extras_entry.runtime_data.async_refresh()
         assert (
             hass.states.get(entities["battery_temperature"].entity_id).state
@@ -218,10 +208,6 @@ async def test_heating_updates_and_independent_failures(
         )
         state = hass.states.get(entities["battery_heating_power"].entity_id)
         assert state.state == power
-        assert (
-            hass.states.get(entities["battery_heating_active"].entity_id).state
-            == active
-        )
         if power == STATE_UNAVAILABLE:
             assert "ac_power" not in state.attributes
             assert "battery_power" not in state.attributes
@@ -230,27 +216,25 @@ async def test_heating_updates_and_independent_failures(
         "on_grid",
         BatteryPower(-1000, -1000),
     )
-    await check("25.0", "0", "off")
+    await check("25.0", "0")
     client.async_read_status_and_power.return_value = (
         "on_grid",
         BatteryPower(-1000, -999),
     )
-    await check("25.0", "1", "on")
+    await check("25.0", "1")
     client.async_read_status_and_power.side_effect = PowerReadError("rejected")
-    await check("25.0", STATE_UNAVAILABLE, STATE_UNAVAILABLE)
+    await check("25.0", STATE_UNAVAILABLE)
     # Entity accessors must also return unknown, even when read outside HA's
     # normal state-writing path (which skips values for unavailable entities).
     power_entity = AnkerSolixBatteryHeatingPower(extras_entry.runtime_data)
-    active_entity = AnkerSolixBatteryHeatingActive(extras_entry.runtime_data)
     assert power_entity.native_value is None
     assert power_entity.extra_state_attributes is None
-    assert active_entity.is_on is None
     client.async_read_status_and_power.side_effect = None
     client.async_read_temperature.side_effect = TemperatureReadError("rejected")
-    await check(STATE_UNAVAILABLE, "1", "on")
+    await check(STATE_UNAVAILABLE, "1")
     client.async_read_status_and_power.side_effect = PowerReadError("offline")
     client.async_read_state_of_health.side_effect = StateOfHealthReadError("offline")
-    await check(STATE_UNAVAILABLE, STATE_UNAVAILABLE, STATE_UNAVAILABLE)
+    await check(STATE_UNAVAILABLE, STATE_UNAVAILABLE)
     client.async_read_temperature.side_effect = None
     client.async_read_status_and_power.side_effect = None
     client.async_read_state_of_health.side_effect = None
@@ -258,7 +242,7 @@ async def test_heating_updates_and_independent_failures(
         "on_grid",
         BatteryPower(100, 200),
     )
-    await check("25.0", "0", "off")
+    await check("25.0", "0")
 
 
 @pytest.mark.parametrize("failed", ["temperature", "power"])
@@ -274,7 +258,7 @@ async def test_setup_with_one_measurement_unavailable(
     assert await hass.config_entries.async_setup(extras_entry.entry_id)
     await hass.async_block_till_done()
     entities = get_entities(hass, extras_entry)
-    assert len(entities) == 7
+    assert len(entities) == 6
     assert extras_entry.state is ConfigEntryState.LOADED
     assert hass.states.get(entities["battery_temperature"].entity_id).state == (
         STATE_UNAVAILABLE if failed == "temperature" else "25.0"
@@ -331,7 +315,6 @@ async def test_power_not_read_when_official_entry_unloaded(
     assert await hass.config_entries.async_setup(official_entry.entry_id)
     await extras_entry.runtime_data.async_refresh()
     assert hass.states.get(entities["battery_heating_power"].entity_id).state == "240"
-    assert hass.states.get(entities["battery_heating_active"].entity_id).state == "on"
 
 
 async def test_upgrade_preserves_existing_temperature_entity(
@@ -352,7 +335,7 @@ async def test_upgrade_preserves_existing_temperature_entity(
     entities = get_entities(hass, extras_entry)
     assert entities["battery_temperature"].entity_id == original.entity_id
     assert entities["battery_temperature"].name == "My temperature"
-    assert len(entities) == 7
+    assert len(entities) == 6
 
 
 async def test_sources_update_when_estimate_is_unchanged(
@@ -373,10 +356,10 @@ async def test_sources_update_when_estimate_is_unchanged(
     assert state.attributes["battery_power"] == -1000
 
 
-async def test_upgrade_clears_heat_class_without_replacing_entity(
+async def test_upgrade_removes_retired_heating_active_entity(
     hass, extras_entry, mock_client
 ) -> None:
-    """Existing beta installs gain On/Off labels while retaining entity identity."""
+    """Remove a renamed legacy entity and retain the heating power sensor."""
     registry = er.async_get(hass)
     original = registry.async_get_or_create(
         "binary_sensor",
@@ -384,23 +367,10 @@ async def test_upgrade_clears_heat_class_without_replacing_entity(
         f"{extras_entry.data['official_entry_id']}_battery_heating_active",
         config_entry=extras_entry,
         suggested_object_id="my_heating_active",
-        original_device_class="heat",
     )
     assert await hass.config_entries.async_setup(extras_entry.entry_id)
     await hass.async_block_till_done()
-    entity = get_entities(hass, extras_entry)["battery_heating_active"]
-    assert entity.entity_id == original.entity_id
-    assert entity.original_device_class is None
-    state = hass.states.get(entity.entity_id)
-    assert state.state == "on"
-    assert "device_class" not in state.attributes
-    assert state.attributes["icon"] == "mdi:radiator"
-
-    mock_client.return_value.async_read_status_and_power.return_value = (
-        "on_grid",
-        BatteryPower(-1000, -1000),
-    )
-    await extras_entry.runtime_data.async_refresh()
-    state = hass.states.get(entity.entity_id)
-    assert state.state == "off"
-    assert "device_class" not in state.attributes
+    assert registry.async_get(original.entity_id) is None
+    assert hass.states.get(original.entity_id) is None
+    power = get_entities(hass, extras_entry)["battery_heating_power"]
+    assert hass.states.get(power.entity_id).state == "240"

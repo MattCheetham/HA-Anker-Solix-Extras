@@ -76,11 +76,6 @@
         "name": "Terugleverbegrenzing"
       }
     },
-    "binary_sensor": {
-      "battery_heating_active": {
-        "name": "Batterijverwarming actief"
-      }
-    },
     "number": {
       "export_limit": {
         "name": "Limiet terugleververmogen"
