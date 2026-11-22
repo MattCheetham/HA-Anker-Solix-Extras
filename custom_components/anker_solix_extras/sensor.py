@@ -45,6 +45,7 @@ BATTERY_HEATING_POWER = SensorEntityDescription(
 BATTERY_STATE_OF_HEALTH = SensorEntityDescription(
     key="battery_state_of_health",
     translation_key="battery_state_of_health",
+    entity_category=EntityCategory.DIAGNOSTIC,
     icon="mdi:battery-heart",
     state_class=SensorStateClass.MEASUREMENT,
     native_unit_of_measurement=PERCENTAGE,

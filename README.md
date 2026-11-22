@@ -24,7 +24,7 @@ Extras entities are outlined in red on the battery's device page in Home Assista
 | Sensor | Description | Display | Source |
 | --- | --- | --- | --- |
 | Battery Temperature | The internal battery temperature, averaged across installed units | °C, whole degrees by default | Input register 10156, INT16 |
-| SOH | Combined state of health reported by the battery system | % | Input register 10015, UINT16 |
+| SOH | Combined state of health reported by the battery system. Shown under Diagnostic and enabled by default. | % | Input register 10015, UINT16 |
 | Plant Status | Operating status reported by the battery system | 1 = On-grid / 2 = Off-grid / 3 = Standby / 4 = Fault | Input register 10000, UINT16 |
 | Battery Heating Power | Estimated from battery and AC power during AC absorption; may include conversion losses or other consumption | W, whole watts by default | Calculated |
 | Off-Grid Output Power | Experimental active power from the off-grid port. Enabled automatically on the Solarbank 4 E5000 Pro. Other supported models can opt in for testing. | W, whole watts by default | Input registers 10233–10234 (FC04), INT32 |
