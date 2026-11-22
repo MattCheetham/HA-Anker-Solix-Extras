@@ -175,7 +175,7 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
                 values.pop(address, None)
             else:
                 values[address] = value
-            self.async_set_updated_data(replace(self.data, published_values=values))
+            self._publish_control_update(replace(self.data, published_values=values))
 
     async def async_set_reserve_enabled(self, enabled: bool) -> None:
         """Check the switch capability and state, then write and confirm."""
@@ -211,7 +211,13 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
     def _publish_backup_reserve(self, reserve: bool | None) -> None:
         """Refresh the switch without reviving stale sensor readings."""
         if self.last_update_success:
-            self.async_set_updated_data(replace(self.data, backup_reserve=reserve))
+            self._publish_control_update(replace(self.data, backup_reserve=reserve))
+
+    def _publish_control_update(self, data: BatteryMeasurements) -> None:
+        """Notify entities of a changed readback while keeping the poll scheduled."""
+        if data != self.data:
+            self.data = data
+            self.async_update_listeners()
 
     async def async_shutdown(self) -> None:
         """Drain Extras I/O before Home Assistant releases the unit."""
