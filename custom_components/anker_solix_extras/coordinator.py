@@ -43,9 +43,6 @@ from .source import OfficialBattery, async_get_battery
 
 _LOGGER = logging.getLogger(__name__)
 
-_PUBLISHED_INPUTS = {address: 2 for address in ENERGY_ADDRESSES.values()} | {
-    address: 1 for address in PCS_COUNT_ADDRESSES.values()
-}
 _PUBLISHED_SETTINGS = {
     SYSTEM_TIME_ADDRESS: (2, 946684800, 0xFFFFFFFF),
     EXPORT_LIMIT_ENABLE_ADDRESS: (1, 0, 1),
@@ -80,6 +77,12 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
             battery.device.model in PUBLISHED_REGISTER_MODELS
             or entry.options.get(CONF_ENABLE_PUBLISHED_REGISTERS, False)
         )
+        self.pcs_count_addresses = PCS_COUNT_ADDRESSES.copy()
+        if battery.device.model == SOLARBANK_4_E5000_PRO:
+            self.pcs_count_addresses.pop("available_pcs_count")
+        self._published_inputs = {
+            address: 2 for address in ENERGY_ADDRESSES.values()
+        } | {address: 1 for address in self.pcs_count_addresses.values()}
         self.off_grid_output_power_enabled = (
             battery.device.model == SOLARBANK_4_E5000_PRO
             or entry.options.get(CONF_ENABLE_OFF_GRID_OUTPUT_POWER, False)
@@ -169,7 +172,7 @@ class AnkerSolixExtrasCoordinator(DataUpdateCoordinator[BatteryMeasurements]):
     ) -> dict[int, int]:
         """Poll each documented value independently of unsupported neighbors."""
         values = {}
-        for address, count in _PUBLISHED_INPUTS.items():
+        for address, count in self._published_inputs.items():
             try:
                 values[address] = await client.async_read_unsigned(address, count)
             except RegisterReadError as err:

@@ -44,6 +44,14 @@ async def test_published_registers_beta_option(
 
     await set_beta_option(True)
     client.async_read_unsigned.assert_any_await(10040, 1)
+    assert all(
+        call.args[0] != 10041 for call in client.async_read_unsigned.await_args_list
+    )
+    available_count_unique_id = f"{official_entry.entry_id}_available_pcs_count"
+    assert (
+        registry.async_get_entity_id("sensor", DOMAIN, available_count_unique_id)
+        is None
+    )
     sensor_id = registry.async_get_entity_id("sensor", DOMAIN, unique_id)
     assert (
         registry.async_get(sensor_id).disabled_by
@@ -57,6 +65,13 @@ async def test_published_registers_beta_option(
         registry.async_get(control_id).disabled_by
         is er.RegistryEntryDisabler.INTEGRATION
     )
+
+    previous_sensor = registry.async_get_or_create(
+        "sensor", DOMAIN, available_count_unique_id, config_entry=extras_entry
+    )
+    assert await hass.config_entries.async_reload(extras_entry.entry_id)
+    await hass.async_block_till_done()
+    assert registry.async_get(previous_sensor.entity_id) is None
 
     client.async_read_unsigned.reset_mock()
     await set_beta_option(False)

@@ -10,6 +10,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import PERCENTAGE, UnitOfEnergy, UnitOfPower, UnitOfTemperature
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -17,7 +18,6 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from . import AnkerSolixExtrasConfigEntry
 from .const import (
     ENERGY_ADDRESSES,
-    PCS_COUNT_ADDRESSES,
     PLANT_STATUS_STATES,
     SYSTEM_TIME_ADDRESS,
 )
@@ -78,6 +78,18 @@ async def async_setup_entry(
 ) -> None:
     """Add additional measurement entities."""
     coordinator = entry.runtime_data
+    if "available_pcs_count" not in coordinator.pcs_count_addresses:
+        registry = er.async_get(hass)
+        entity_id = registry.async_get_entity_id(
+            "sensor",
+            entry.domain,
+            f"{coordinator.official_entry_id}_available_pcs_count",
+        )
+        if entity_id is not None:
+            registered = registry.async_get(entity_id)
+            if registered is not None and registered.config_entry_id == entry.entry_id:
+                registry.async_remove(entity_id)
+
     entities: list[SensorEntity] = [
         AnkerSolixBatteryTemperature(coordinator),
         AnkerSolixBatteryHeatingPower(coordinator),
@@ -89,7 +101,9 @@ async def async_setup_entry(
     if coordinator.published_registers_enabled:
         entities.extend(
             AnkerSolixPublishedSensor(coordinator, key, address)
-            for key, address in (ENERGY_ADDRESSES | PCS_COUNT_ADDRESSES).items()
+            for key, address in (
+                ENERGY_ADDRESSES | coordinator.pcs_count_addresses
+            ).items()
         )
         entities.append(
             AnkerSolixPublishedSensor(coordinator, "system_time", SYSTEM_TIME_ADDRESS)
