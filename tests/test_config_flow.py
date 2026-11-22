@@ -76,6 +76,13 @@ async def test_choose_official_battery(
             "total_battery_charge_energy",
             "4.2",
         ),
+        (
+            "Anker SOLIX Solarbank Max AC",
+            10036,
+            [0, 1200],
+            "rechargeable_power",
+            "1200",
+        ),
     ],
 )
 async def test_setup_can_use_a_measurement_other_than_temperature(

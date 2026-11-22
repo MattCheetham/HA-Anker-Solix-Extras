@@ -43,6 +43,12 @@
       "off_grid_output_power": {
         "name": "Uitgangsvermogen buiten het net"
       },
+      "rechargeable_power": {
+        "name": "Beschikbaar laadvermogen"
+      },
+      "dischargeable_power": {
+        "name": "Beschikbaar ontlaadvermogen"
+      },
       "total_battery_charge_energy": {
         "name": "Totale laadenergie van de batterij"
       },
@@ -116,7 +122,7 @@
         },
         "data_description": {
           "enable_off_grid_output_power": "Om deze functie op dit model te testen. Metingen kunnen ontbreken of onnauwkeurig zijn.",
-          "enable_published_registers": "Test energietotalen, aantallen PCS-eenheden, systeemtijd en terugleverbegrenzing op dit model. Registers kunnen ontbreken of anders werken."
+          "enable_published_registers": "Test extra Modbus-entiteiten van het systeem op dit model. Registers kunnen ontbreken of anders werken."
         }
       }
     }

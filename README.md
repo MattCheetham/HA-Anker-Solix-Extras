@@ -29,13 +29,16 @@ Extras entities are outlined in red on the battery's device page in Home Assista
 | Battery Heating Power | Estimated from battery and AC power during AC absorption; may include conversion losses or other consumption | W, whole watts by default | Calculated |
 | Off-Grid Output Power | Experimental active power from the off-grid port. Enabled automatically on the Solarbank 4 E5000 Pro. Other supported models can opt in for testing. | W, whole watts by default | Input registers 10233–10234 (FC04), INT32 |
 | Backup Reserve Enable | A switch to turn on the Battery Reserve function | 0 = disabled / 1 = enabled | Holding register 60003, UINT16 |
+| Rechargeable Power | Available charging power reported by the battery system. Pair it with Battery Temperature to defer scheduled charging when the battery is cold and available charging power is low. | W | Input registers 10036–10037 (FC04), INT32 |
+| Dischargeable Power | Available discharging power reported by the battery system | W | Input registers 10038–10039 (FC04), INT32 |
 | Total Battery Charge / Discharge Energy | Lifetime plant battery energy totals from the published registers | kWh | Input registers 10022 and 10024, UINT32 |
 | Total Load Consumption / Grid Import / Grid Export Energy | Lifetime totals for load consumption, energy bought from the grid, and energy fed into the grid | kWh | Input registers 10026, 10030, and 10034, UINT32 |
 | PCS Count / Available PCS Count | Total and available power conversion systems | Count | Input registers 10040 and 10041, UINT16 |
 | System Time / Sync System Time | Shows the battery clock and provides a button to set it to Home Assistant's current time | Timestamp / button | Holding registers 10060–10061 |
 | Export Power Limitation / Export Power Limit | A switch to apply the device's export limit and a separate control for the limit in whole watts | On / off and W | Holding register 10074 (UINT16) and 10075–10076 (INT32) |
 
-The energy totals, PCS counts, clock, and export limit are added automatically
+The rechargeable and dischargeable power sensors, energy totals, PCS counts,
+clock, and export limit are added automatically
 on Solarbank Max, Solarbank Max AC, XE, and XE AC, the models listed in the
 [Anker SOLIX Modbus protocol](https://salesforce-knowledge-download.s3.us-west-2.amazonaws.com/000039871/en_US/000039871.pdf).
 On other supported models, turn on **Enable Plant Modbus Entities (beta)**

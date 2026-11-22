@@ -141,6 +141,18 @@ class AnkerSolixExtrasClient:
         self, address: int, count: int, *, holding: bool = False
     ) -> int:
         """Read one unsigned value, with the high word first."""
+        words = await self._async_read_words(address, count, holding=holding)
+        return (words[0] << 16) | words[1] if count == 2 else words[0]
+
+    async def async_read_int32(self, address: int) -> int:
+        """Read a signed 32-bit input value, with the high word first."""
+        high_word, low_word = await self._async_read_words(address, 2, holding=False)
+        return _decode_int32(high_word, low_word)
+
+    async def _async_read_words(
+        self, address: int, count: int, *, holding: bool
+    ) -> list[int]:
+        """Read and validate a holding or input register response."""
         try:
             if holding:
                 words = await self._unit.read_holding_registers(address, count)
@@ -150,7 +162,7 @@ class AnkerSolixExtrasClient:
             raise RegisterReadError(f"Unable to read register {address}") from err
         if not _valid_words(words, count):
             raise RegisterReadError(f"Invalid response for register {address}")
-        return (words[0] << 16) | words[1] if count == 2 else words[0]
+        return words
 
     async def async_write_registers(self, address: int, words: list[int]) -> None:
         """Write contiguous holding registers atomically (FC16)."""

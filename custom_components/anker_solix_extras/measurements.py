@@ -18,6 +18,7 @@ from .const import (
     EXPORT_LIMIT_ADDRESS,
     EXPORT_LIMIT_ENABLE_ADDRESS,
     MAX_EXPORT_LIMIT,
+    POWER_LIMIT_ADDRESSES,
     SYSTEM_TIME_ADDRESS,
 )
 from .models import BatteryMeasurements
@@ -33,9 +34,9 @@ PUBLISHED_SETTINGS = {
 
 def published_input_registers(pcs_count_addresses: dict[str, int]) -> dict[int, int]:
     """Return published input register addresses and their word counts."""
-    return {address: 2 for address in ENERGY_ADDRESSES.values()} | {
-        address: 1 for address in pcs_count_addresses.values()
-    }
+    return {
+        address: 2 for address in (ENERGY_ADDRESSES | POWER_LIMIT_ADDRESSES).values()
+    } | {address: 1 for address in pcs_count_addresses.values()}
 
 
 async def async_read_measurements(
@@ -113,7 +114,10 @@ async def _async_read_published_values(
         if addresses is not None and address not in addresses:
             continue
         try:
-            values[address] = await client.async_read_unsigned(address, count)
+            if address in POWER_LIMIT_ADDRESSES.values():
+                values[address] = await client.async_read_int32(address)
+            else:
+                values[address] = await client.async_read_unsigned(address, count)
         except RegisterReadError as err:
             _LOGGER.debug("Published input read failed: %s", err)
     for address in PUBLISHED_SETTINGS:
