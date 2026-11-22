@@ -5,6 +5,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.entity import EntityCategory
 from modbus_connection import ModbusTimeoutError
 
 from custom_components.anker_solix_extras.client import (
@@ -110,6 +111,8 @@ async def test_extras_entities_share_official_device(
     assert status.attributes["options"] == ["on_grid", "off_grid", "standby", "fault"]
 
     soh = entities["battery_state_of_health"]
+    assert soh.entity_category is EntityCategory.DIAGNOSTIC
+    assert not soh.disabled
     state = hass.states.get(soh.entity_id)
     assert state.state == "100"
     assert state.name == status.name.removesuffix("Plant Status") + "SOH"
